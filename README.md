@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Special Gifts by M
 
-## Getting Started
+A Netlify-ready Next.js storefront for Special Gifts by M, built around your real catalogue and a free-tool workflow using Supabase, GitHub, and Netlify.
 
-First, run the development server:
+## What this starter includes
+
+- Category-driven storefront based on your pricing PDF
+- Product detail pages with customization controls
+- Cart + checkout flow with EFT / WhatsApp order support
+- Supabase order persistence API route
+- Branding assets and launch-oriented UI
+- SQL schema and seed files for Supabase
+
+## Local setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy the environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Add your Supabase values to `.env.local`.
+
+4. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a new Supabase project.
+2. Open the SQL Editor.
+3. Run `supabase/schema.sql`.
+4. Run `supabase/seed.sql`.
+5. In Project Settings, copy:
+   - `Project URL` -> `NEXT_PUBLIC_SUPABASE_URL`
+   - `anon public key` -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `service_role key` -> `SUPABASE_SERVICE_ROLE_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## GitHub setup with Git Bash
 
-## Learn More
+```bash
+git init
+git add .
+git commit -m "Initial ecommerce foundation"
+git branch -M main
+git remote add origin https://github.com/YOUR-USERNAME/special-gifts-app.git
+git push -u origin main
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Netlify deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Log into Netlify.
+2. Choose `Add new site` -> `Import an existing project`.
+3. Connect your GitHub repo.
+4. Let Netlify detect the Next.js settings automatically.
+5. Add the same Supabase env vars from `.env.local`.
+6. Deploy the site.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Important MVP assumptions
 
-## Deploy on Vercel
+- Custom vinyl pricing currently uses `R3 * (width + height)` as an estimate because the price sheet says `R3 per cm` but does not define the exact billing formula.
+- Checkout uses EFT and WhatsApp-first order confirmation to stay free and simple at launch.
+- PayFast can be added next once merchant credentials are available.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Security note
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Do not commit secret values such as your Supabase service role key or the PUDO API key to GitHub.
