@@ -8,6 +8,45 @@ export const printSizes = [
   { label: "A3 print", price: 80 },
 ];
 
+const polyesterTeeGallery = [
+  "/store-products/clothing_tshirt_unisex_polyester(1).png",
+  "/store-products/clothing_tshirt_unisex_polyester(2).png",
+  "/store-products/clothing_tshirt_unisex_polyester(3).png",
+  "/store-products/clothing_tshirt_unisex_polyester(4).png",
+  "/store-products/clothing_tshirt_unisex_polyester(5).png",
+  "/store-products/clothing_tshirt_unisex_polyester(6).png",
+  "/store-products/clothing_tshirt_unisex_polyester(7).png",
+];
+
+const meshCapGallery = [
+  "/store-products/accessories_cap_5panel_mesh(1).png",
+  "/store-products/accessories_cap_5panel_mesh(2).png",
+  "/store-products/accessories_cap_5panel_mesh(3).png",
+  "/store-products/accessories_cap_5panel_mesh(4).png",
+  "/store-products/accessories_cap_5panel_mesh(5).png",
+  "/store-products/accessories_cap_5panel_mesh(6).png",
+  "/store-products/accessories_cap_5panel_mesh(7).png",
+];
+
+const structuredCapGallery = [
+  "/store-products/accessories_cap_5panel_structured(1).png",
+  "/store-products/accessories_cap_5panel_structured(2).png",
+  "/store-products/accessories_cap_5panel_structured(3).png",
+  "/store-products/accessories_cap_5panel_structured(4).png",
+  "/store-products/accessories_cap_5panel_structured(5).png",
+  "/store-products/accessories_cap_5panel_structured(6).png",
+  "/store-products/accessories_cap_5panel_structured(7).png",
+  "/store-products/accessories_cap_5panel_structured(8).png",
+  "/store-products/accessories_cap_5panel_structured(9).png",
+];
+
+const stoneSlabGallery = [
+  "/store-products/decor_photo_stone_slab(1).png",
+  "/store-products/decor_photo_stone_slab(2).png",
+  "/store-products/decor_photo_stone_slab(3).png",
+  "/store-products/decor_photo_stone_slab(4).png",
+];
+
 export const categories = [
   "Clothing",
   "Caps",
@@ -34,6 +73,8 @@ export const products: Product[] = [
     summary: "Cotton tee with long or short sleeve options for men and women.",
     leadTime: "2-4 business days",
     badges: ["Best Seller", "Custom Print Ready"],
+    image: polyesterTeeGallery[0],
+    galleryImages: polyesterTeeGallery,
     supportsGiftWrap: true,
     printSizes,
     variantOptions: [
@@ -64,6 +105,8 @@ export const products: Product[] = [
       "Lightweight polyester tee designed for vibrant sublimation and sportswear designs.",
     summary: "Breathable short-sleeve tee for bold full-colour prints.",
     leadTime: "2-4 business days",
+    image: polyesterTeeGallery[2],
+    galleryImages: polyesterTeeGallery,
     printSizes,
     supportsGiftWrap: true,
     variantOptions: [
@@ -83,6 +126,8 @@ export const products: Product[] = [
     description: "Durable and playful tee for birthdays, school events, and matching sets.",
     summary: "Bright and core colour T-shirts for kids.",
     leadTime: "2-4 business days",
+    image: polyesterTeeGallery[4],
+    galleryImages: polyesterTeeGallery,
     printSizes,
     supportsGiftWrap: true,
     variantOptions: [
@@ -119,6 +164,8 @@ export const products: Product[] = [
     description: "Breathable cap for outdoor wear, gifting, and branded events.",
     summary: "Ventilated mesh cap with solid, two-tone, and camo options.",
     leadTime: "3-5 business days",
+    image: meshCapGallery[0],
+    galleryImages: meshCapGallery,
     supportsGiftWrap: true,
     variantOptions: [
       {
@@ -136,6 +183,8 @@ export const products: Product[] = [
     description: "Firm front panel cap that shows off logos and names beautifully.",
     summary: "Clean cap silhouette for corporate, casual, and event branding.",
     leadTime: "3-5 business days",
+    image: structuredCapGallery[0],
+    galleryImages: structuredCapGallery,
     supportsGiftWrap: true,
     variantOptions: [
       { label: "Colour", values: ["White", "Black", "Navy", "Red", "Royal Blue", "Orange", "Pink", "Green"] },
@@ -177,6 +226,8 @@ export const products: Product[] = [
     description: "Premium stone surface keeps memories vivid and gift-ready.",
     summary: "Durable printed display stone in multiple sizes.",
     leadTime: "3-5 business days",
+    image: stoneSlabGallery[0],
+    galleryImages: stoneSlabGallery,
     supportsGiftWrap: true,
     variantOptions: [{ label: "Size", values: ["120x220", "150x150", "150x200", "200x200"] }],
   },
@@ -211,6 +262,8 @@ export const products: Product[] = [
     description: "Single-sided printed lanyard for events, staff tags, and promotions.",
     summary: "Simple branded essential for schools, teams, and events.",
     leadTime: "3-5 business days",
+    image: "/store-products/accessories_lanyard.png",
+    galleryImages: ["/store-products/accessories_lanyard.png"],
   },
   {
     id: "mousepad",
@@ -221,6 +274,8 @@ export const products: Product[] = [
     description: "Smooth print-ready surface for office gifts and promotional packs.",
     summary: "Desk-ready custom mousepad with photo or logo printing.",
     leadTime: "3-5 business days",
+    image: "/store-products/accessories_mousepad.png",
+    galleryImages: ["/store-products/accessories_mousepad.png"],
     supportsGiftWrap: true,
   },
   {
@@ -232,6 +287,11 @@ export const products: Product[] = [
     description: "Convenient phone grip and stand for names, logos, and artwork.",
     summary: "Everyday phone accessory in black or white.",
     leadTime: "2-4 business days",
+    image: "/store-products/accessories_popsocket(1).png",
+    galleryImages: [
+      "/store-products/accessories_popsocket(1).png",
+      "/store-products/accessories_popsocket(2).png",
+    ],
     variantOptions: [{ label: "Colour", values: ["Black", "White"] }],
   },
   {
@@ -315,6 +375,8 @@ export const products: Product[] = [
     description: "Festive hat for family sets, holiday events, and December gifting.",
     summary: "Holiday favourite in adult and kids sizing.",
     leadTime: "2-3 business days",
+    image: "/store-products/seasonal_christmas_hat(1).png",
+    galleryImages: ["/store-products/seasonal_christmas_hat(1).png"],
     supportsGiftWrap: true,
     variantOptions: [{ label: "Type", values: ["Adults", "Kids"] }],
   },

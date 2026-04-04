@@ -19,6 +19,8 @@ export type Product = {
   featured?: boolean;
   summary: string;
   badges?: string[];
+  image?: string;
+  galleryImages?: string[];
   variantOptions?: ProductOptionGroup[];
   printSizes?: PrintSizeOption[];
   supportsCustomVinyl?: boolean;

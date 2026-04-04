@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/store";
 import { formatCurrency } from "@/lib/pricing";
@@ -5,11 +6,30 @@ import { formatCurrency } from "@/lib/pricing";
 export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="glass card-hover rounded-[1.75rem] p-5">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
+      <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-[1.5rem] border border-white/50 bg-[linear-gradient(160deg,rgba(255,242,248,1),rgba(244,229,240,1))]">
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover"
+          />
+        ) : (
+          <div
+            className="h-full w-full bg-cover bg-center opacity-80"
+            style={{ backgroundImage: "url('/branding/story-bg-2.png')" }}
+          />
+        )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgba(100,53,95,0.78)] to-transparent px-4 py-4">
+          <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-white/85">
             {product.category}
           </p>
+        </div>
+      </div>
+
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
           <h3 className="mt-2 font-display text-3xl leading-none text-[var(--berry)]">
             {product.name}
           </h3>

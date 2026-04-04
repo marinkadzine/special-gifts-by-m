@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Special Gifts by M</string>
+    <string name="title_activity_main">Special Gifts by M</string>
+    <string name="package_name">com.specialgiftsbym.app</string>
+    <string name="custom_url_scheme">com.specialgiftsbym.app</string>
+</resources>

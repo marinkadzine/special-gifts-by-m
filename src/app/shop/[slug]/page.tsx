@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ProductGallery } from "@/components/product-gallery";
 import { getProductBySlug, products } from "@/data/catalog";
 import { ProductCustomizer } from "@/components/product-customizer";
 import { SiteFooter } from "@/components/site-footer";
@@ -28,10 +29,7 @@ export default async function ProductPage({
       <SiteHeader />
       <div className="shell grid gap-8 py-8 md:grid-cols-[1fr_0.92fr]">
         <section className="glass overflow-hidden rounded-[2rem]">
-          <div
-            className="min-h-[360px] bg-cover bg-center"
-            style={{ backgroundImage: "url('/branding/story-bg-2.png')" }}
-          />
+          <ProductGallery product={product} />
           <div className="p-6 md:p-8">
             <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
               {product.category}
