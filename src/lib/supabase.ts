@@ -9,6 +9,20 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
+function humanizeStorageError(message: string, fileName: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("bucket") && normalized.includes("not found")) {
+    return "The Supabase upload bucket is missing. Please re-run supabase/schema.sql so the 'order-assets' bucket is created, then try the upload again.";
+  }
+
+  if (normalized.includes("row-level security") || normalized.includes("permission")) {
+    return "The upload bucket exists, but its storage policy is blocking the upload. Please re-run supabase/schema.sql to refresh the storage policies.";
+  }
+
+  return message || `Could not upload ${fileName}.`;
+}
+
 export function getBrowserSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     return null;
@@ -43,7 +57,7 @@ export async function uploadReferenceFiles(files: File[], productSlug: string) {
       });
 
       if (error) {
-        throw new Error(error.message || `Could not upload ${file.name}.`);
+        throw new Error(humanizeStorageError(error.message, file.name));
       }
 
       const { data } = supabase.storage.from("order-assets").getPublicUrl(filePath);

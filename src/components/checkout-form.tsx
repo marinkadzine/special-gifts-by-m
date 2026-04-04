@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
 import {
@@ -67,6 +68,21 @@ export function CheckoutForm() {
       setEmail(user.email);
     }
   }, [customerName, email, profile?.full_name, user?.email, user?.user_metadata.full_name]);
+
+  if (!items.length) {
+    return (
+      <section className="glass rounded-[2rem] p-6">
+        <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">Checkout</p>
+        <h2 className="mt-2 font-display text-4xl text-[var(--berry)]">Your cart is empty</h2>
+        <p className="mt-4 text-base leading-8 text-[var(--mauve)]">
+          Checkout is only available once you have added at least one item to your cart.
+        </p>
+        <Link href="/#catalogue" className="button-primary mt-6 inline-flex">
+          Browse the catalogue
+        </Link>
+      </section>
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
