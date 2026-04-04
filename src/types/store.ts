@@ -106,6 +106,7 @@ export type OrderRecord = {
   subtotal: number;
   total: number;
   status: string;
+  items?: CartItem[];
   created_at: string;
 };
 

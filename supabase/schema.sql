@@ -160,6 +160,13 @@ create table if not exists public.gallery_items (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('order-assets', 'order-assets', true, 10485760)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit;
+
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
@@ -194,6 +201,20 @@ grant select, update on table public.orders to authenticated;
 grant select, update on table public.callback_requests to authenticated;
 grant select, update on table public.profiles to authenticated;
 grant select, insert, update on table public.gallery_items to authenticated;
+
+drop policy if exists "Public can upload order assets" on storage.objects;
+create policy "Public can upload order assets"
+on storage.objects
+for insert
+to anon, authenticated
+with check (bucket_id = 'order-assets');
+
+drop policy if exists "Public can read order assets" on storage.objects;
+create policy "Public can read order assets"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'order-assets');
 
 drop policy if exists "Public can read products" on public.products;
 create policy "Public can read products"

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Product } from "@/types/store";
+import { Product, UploadedReference } from "@/types/store";
 import { calculateLineItemTotal, calculateVinylPrice, formatCurrency, GIFT_WRAP_FEE } from "@/lib/pricing";
+import { uploadReferenceFiles } from "@/lib/supabase";
 import { useCart } from "@/components/cart-provider";
 
 export function ProductCustomizer({ product }: { product: Product }) {
@@ -13,6 +14,10 @@ export function ProductCustomizer({ product }: { product: Product }) {
   const [giftWrap, setGiftWrap] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [giftNote, setGiftNote] = useState("");
+  const [customizationNotes, setCustomizationNotes] = useState("");
+  const [referenceFiles, setReferenceFiles] = useState<UploadedReference[]>([]);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [printSize, setPrintSize] = useState(product.printSizes?.[0]?.label ?? "");
   const [vinylWidth, setVinylWidth] = useState(10);
@@ -26,8 +31,39 @@ export function ProductCustomizer({ product }: { product: Product }) {
     setSelectedOptions((current) => ({ ...current, [label]: value }));
   }
 
+  async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    setUploadingFiles(true);
+    setUploadStatus(`Uploading ${files.length} file${files.length > 1 ? "s" : ""}...`);
+
+    try {
+      const uploaded = await uploadReferenceFiles(files, product.slug);
+      setReferenceFiles((current) => [...current, ...uploaded]);
+      setUploadStatus(`${uploaded.length} file${uploaded.length > 1 ? "s" : ""} attached to this item.`);
+      event.target.value = "";
+    } catch (error) {
+      setUploadStatus(error instanceof Error ? error.message : "Could not upload the selected files.");
+    } finally {
+      setUploadingFiles(false);
+    }
+  }
+
+  function removeReferenceFile(id: string) {
+    setReferenceFiles((current) => current.filter((file) => file.id !== id));
+  }
+
   function handleAddToCart() {
-    const cartId = `${product.id}-${JSON.stringify(selectedOptions)}-${printSize}-${giftWrap}-${vinylWidth}-${vinylHeight}-${giftNote}`;
+    if (!customizationNotes.trim() && !referenceFiles.length) {
+      setUploadStatus("Please add print instructions, upload artwork, or do both before adding this item.");
+      return;
+    }
+
+    const cartId = `${product.id}-${JSON.stringify(selectedOptions)}-${printSize}-${giftWrap}-${vinylWidth}-${vinylHeight}-${giftNote}-${customizationNotes}-${referenceFiles.map((file) => file.path || file.name).join(",")}`;
     addItem({
       cartId,
       productId: product.id,
@@ -39,7 +75,13 @@ export function ProductCustomizer({ product }: { product: Product }) {
       quantity,
       size: selectedOptions.Size,
       color: selectedOptions.Colour,
-      variant: selectedOptions.Fit || selectedOptions.Style || selectedOptions.Type || selectedOptions.Finish || selectedOptions.Quantity || selectedOptions.Sides,
+      variant:
+        selectedOptions.Fit ||
+        selectedOptions.Style ||
+        selectedOptions.Type ||
+        selectedOptions.Finish ||
+        selectedOptions.Quantity ||
+        selectedOptions.Sides,
       printSize: selectedPrint?.label,
       customVinyl: product.supportsCustomVinyl
         ? { widthCm: vinylWidth, heightCm: vinylHeight, price: vinylPrice }
@@ -47,6 +89,8 @@ export function ProductCustomizer({ product }: { product: Product }) {
       isGift,
       giftWrap,
       giftNote: giftNote || undefined,
+      customizationNotes: customizationNotes.trim(),
+      referenceFiles,
     });
 
     router.push("/checkout");
@@ -158,6 +202,75 @@ export function ProductCustomizer({ product }: { product: Product }) {
           </div>
         ) : null}
 
+        <label className="block text-sm text-[var(--berry)]">
+          Custom print instructions
+          <textarea
+            value={customizationNotes}
+            onChange={(event) => setCustomizationNotes(event.target.value)}
+            className="mt-2 min-h-32 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
+            placeholder="Example: Put the name 'Leila' in gold script on the left chest and add the photo on the back."
+          />
+          <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
+            Tell Special Gifts by M exactly what should be printed, where it should go, and any colour or style preferences.
+          </span>
+        </label>
+
+        <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/75 p-4">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
+            Upload logos, photos, or design references
+          </p>
+          <label className="mt-3 block text-sm text-[var(--berry)]">
+            Choose one or more files
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf,.svg,.eps"
+              onChange={handleFileUpload}
+              className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+            />
+          </label>
+          <p className="mt-2 text-xs leading-6 text-[var(--mauve)]">
+            Upload as many files as you need so the team knows exactly what to print.
+          </p>
+          {referenceFiles.length ? (
+            <div className="mt-4 space-y-2">
+              {referenceFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="flex flex-col gap-2 rounded-[1rem] border border-[var(--line)] bg-white px-4 py-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-[var(--berry)]">{file.name}</p>
+                    <p className="text-xs text-[var(--mauve)]">
+                      {Math.max(1, Math.round(file.size / 1024))} KB
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {file.url ? (
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm font-bold text-[var(--rose-deep)]"
+                      >
+                        View
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => removeReferenceFile(file.id)}
+                      className="text-sm font-bold text-[var(--rose-deep)]"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {uploadStatus ? <p className="mt-3 text-sm text-[var(--mauve)]">{uploadStatus}</p> : null}
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm text-[var(--berry)]">
             Quantity
@@ -196,8 +309,13 @@ export function ProductCustomizer({ product }: { product: Product }) {
         ) : null}
       </div>
 
-      <button type="button" onClick={handleAddToCart} className="button-primary mt-8 w-full text-center">
-        Add to cart and continue
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        disabled={uploadingFiles}
+        className="button-primary mt-8 w-full text-center disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {uploadingFiles ? "Uploading files..." : "Add to cart and continue"}
       </button>
     </div>
   );

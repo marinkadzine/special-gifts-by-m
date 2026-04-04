@@ -35,10 +35,33 @@ export function CartSummary() {
                   {item.giftNote ? (
                     <p className="mt-1 text-sm text-[var(--mauve)]">Gift note: {item.giftNote}</p>
                   ) : null}
+                  {item.customizationNotes ? (
+                    <p className="mt-1 text-sm text-[var(--mauve)]">
+                      Print instructions: {item.customizationNotes}
+                    </p>
+                  ) : null}
                   {item.customVinyl ? (
                     <p className="mt-1 text-sm text-[var(--mauve)]">
                       Vinyl size: {item.customVinyl.widthCm} x {item.customVinyl.heightCm} cm
                     </p>
+                  ) : null}
+                  {item.referenceFiles?.length ? (
+                    <div className="mt-2 text-sm text-[var(--mauve)]">
+                      <p>Reference files:</p>
+                      <ul className="mt-1 space-y-1">
+                        {item.referenceFiles.map((file) => (
+                          <li key={file.id}>
+                            {file.url ? (
+                              <a href={file.url} target="_blank" rel="noreferrer" className="font-bold text-[var(--rose-deep)]">
+                                {file.name}
+                              </a>
+                            ) : (
+                              file.name
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3">

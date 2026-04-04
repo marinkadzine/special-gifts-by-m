@@ -23,6 +23,10 @@ export function buildWhatsAppOrderMessage(order: CheckoutInput) {
         item.customVinyl
           ? `Vinyl: ${item.customVinyl.widthCm}x${item.customVinyl.heightCm}cm`
           : "",
+        item.customizationNotes ? `Instructions: ${item.customizationNotes}` : "",
+        item.referenceFiles?.length
+          ? `Files: ${item.referenceFiles.map((file) => file.name).join(", ")}`
+          : "",
         item.giftWrap ? "Gift wrap included" : "",
         item.giftNote ? `Gift note: ${item.giftNote}` : "",
       ].filter(Boolean);
