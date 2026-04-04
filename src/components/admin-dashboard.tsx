@@ -290,7 +290,7 @@ export function AdminDashboard() {
                         )}
                         {!item.customizationNotes && !item.referenceFiles?.length ? (
                           <p className="mt-3 text-sm font-bold text-[var(--rose-deep)]">
-                            This order line was saved without client instructions or uploaded artwork.
+                            This order line was saved without any uploaded artwork or reference file.
                           </p>
                         ) : null}
                       </div>

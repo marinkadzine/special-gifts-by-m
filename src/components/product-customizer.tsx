@@ -58,8 +58,8 @@ export function ProductCustomizer({ product }: { product: Product }) {
   }
 
   function handleAddToCart() {
-    if (!customizationNotes.trim() && !referenceFiles.length) {
-      setUploadStatus("Please add print instructions, upload artwork, or do both before adding this item.");
+    if (!referenceFiles.length) {
+      setUploadStatus("Please upload at least one logo, photo, or design reference before adding this item.");
       return;
     }
 
@@ -211,7 +211,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
             placeholder="Example: Put the name 'Leila' in gold script on the left chest and add the photo on the back."
           />
           <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
-            Tell Special Gifts by M exactly what should be printed, where it should go, and any colour or style preferences.
+            Optional: tell Special Gifts by M exactly what should be printed, where it should go, and any colour or style preferences.
           </span>
         </label>
 
@@ -219,6 +219,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
             Upload logos, photos, or design references
           </p>
+          <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">Required for every order item.</p>
           <label className="mt-3 block text-sm text-[var(--berry)]">
             Choose one or more files
             <input

@@ -12,7 +12,7 @@ function cleanReferenceFile(file: UploadedReference): UploadedReference {
 }
 
 export function itemHasCustomizationDetails(item: CartItem) {
-  return Boolean(item.customizationNotes?.trim() || item.referenceFiles?.length);
+  return Boolean(item.referenceFiles?.length);
 }
 
 export function getItemsMissingCustomization(items: CartItem[]) {

@@ -80,7 +80,7 @@ export function CheckoutForm() {
 
     if (incompleteItems.length) {
       setStatus(
-        `Please remove and re-add these item(s) with print instructions or artwork first: ${incompleteItems
+        `Please remove and re-add these item(s) with at least one uploaded artwork/reference file first: ${incompleteItems
           .map((item) => item.name)
           .join(", ")}.`,
       );
@@ -183,8 +183,8 @@ export function CheckoutForm() {
 
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
-          Every product must include print instructions, uploaded artwork, or both before checkout so the team
-          knows exactly what to make.
+          Every product must include at least one uploaded artwork or reference file before checkout. Written
+          instructions are optional, but still recommended.
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

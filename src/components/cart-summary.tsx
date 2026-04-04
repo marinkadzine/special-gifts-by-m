@@ -66,7 +66,7 @@ export function CartSummary() {
                   ) : null}
                   {!itemHasCustomizationDetails(item) ? (
                     <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">
-                      This item still needs print instructions or artwork before checkout.
+                      This item still needs at least one uploaded artwork or reference file before checkout.
                     </p>
                   ) : null}
                 </div>
