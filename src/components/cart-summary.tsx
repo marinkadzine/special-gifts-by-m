@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
+import { itemHasCustomizationDetails } from "@/lib/order-items";
 import { calculateCartSubtotal, formatCurrency } from "@/lib/pricing";
 
 export function CartSummary() {
@@ -62,6 +63,11 @@ export function CartSummary() {
                         ))}
                       </ul>
                     </div>
+                  ) : null}
+                  {!itemHasCustomizationDetails(item) ? (
+                    <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">
+                      This item still needs print instructions or artwork before checkout.
+                    </p>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-3">

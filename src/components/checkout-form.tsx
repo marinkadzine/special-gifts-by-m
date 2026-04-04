@@ -18,6 +18,7 @@ import {
   getDeliveryFee,
   PUDO_LOCKER_OPTIONS,
 } from "@/lib/pricing";
+import { getItemsMissingCustomization, serializeOrderItems } from "@/lib/order-items";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { CheckoutInput, DeliveryMethod, PaymentMethod } from "@/types/store";
 
@@ -75,7 +76,19 @@ export function CheckoutForm() {
       return;
     }
 
+    const incompleteItems = getItemsMissingCustomization(items);
+
+    if (incompleteItems.length) {
+      setStatus(
+        `Please remove and re-add these item(s) with print instructions or artwork first: ${incompleteItems
+          .map((item) => item.name)
+          .join(", ")}.`,
+      );
+      return;
+    }
+
     const formData = new FormData(form);
+    const serializedItems = serializeOrderItems(items);
     const payload: CheckoutInput = {
       customerId: user?.id,
       customerName: customerName.trim(),
@@ -90,7 +103,7 @@ export function CheckoutForm() {
           : String(formData.get("address") || ""),
       notes: String(formData.get("notes") || ""),
       paymentMethod,
-      items,
+      items: serializedItems,
       subtotal,
       deliveryFee,
       total,
@@ -122,7 +135,7 @@ export function CheckoutForm() {
           subtotal: payload.subtotal,
           total: payload.total,
           status: "pending",
-          items: payload.items,
+          items: serializedItems,
         } as never);
 
         if (error) {
@@ -169,6 +182,11 @@ export function CheckoutForm() {
       )}
 
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+        <div className="rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+          Every product must include print instructions, uploaded artwork, or both before checkout so the team
+          knows exactly what to make.
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm text-[var(--berry)]">
             Full name

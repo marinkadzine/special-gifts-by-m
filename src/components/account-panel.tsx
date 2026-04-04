@@ -32,7 +32,7 @@ export function AccountPanel() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id, order_number, customer_name, phone, email, delivery_method, delivery_fee, payment_method, locker_id, pudo_size, address, notes, subtotal, total, status, created_at",
+          "id, order_number, customer_name, phone, email, delivery_method, delivery_fee, payment_method, locker_id, pudo_size, address, notes, subtotal, total, status, items, created_at",
         )
         .order("created_at", { ascending: false });
 
@@ -245,6 +245,40 @@ export function AccountPanel() {
                   </div>
                   <p className="font-bold text-[var(--berry)]">{formatCurrency(Number(order.total))}</p>
                 </div>
+                {order.items?.length ? (
+                  <div className="mt-3 space-y-3 rounded-[1rem] bg-[var(--light-grey)] p-3">
+                    {order.items.map((item) => (
+                      <div key={item.cartId} className="rounded-[1rem] bg-white px-3 py-3">
+                        <p className="font-bold text-[var(--berry)]">
+                          {item.quantity} x {item.name}
+                        </p>
+                        {item.customizationNotes ? (
+                          <p className="mt-1 text-sm text-[var(--mauve)]">
+                            Print instructions: {item.customizationNotes}
+                          </p>
+                        ) : null}
+                        {item.referenceFiles?.length ? (
+                          <div className="mt-2 text-sm text-[var(--mauve)]">
+                            <p>Uploaded references:</p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {item.referenceFiles.map((file) => (
+                                <a
+                                  key={file.id}
+                                  href={file.url || "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-full bg-[var(--soft-rose)] px-3 py-1 font-bold text-[var(--rose-deep)]"
+                                >
+                                  {file.name}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))
           ) : (

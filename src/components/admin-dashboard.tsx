@@ -233,15 +233,20 @@ export function AdminDashboard() {
                             <p>Uploaded references:</p>
                             <div className="mt-1 flex flex-wrap gap-2">
                               {item.referenceFiles.map((file) => (
-                                <a
-                                  key={file.id}
-                                  href={file.url || "#"}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="rounded-full bg-[var(--soft-rose)] px-3 py-1 font-bold text-[var(--rose-deep)]"
-                                >
-                                  {file.name}
-                                </a>
+                                <div key={file.id} className="overflow-hidden rounded-[1rem] border border-[var(--line)] bg-white">
+                                  {file.type.startsWith("image/") && file.url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={file.url} alt={file.name} className="h-28 w-28 object-cover" />
+                                  ) : null}
+                                  <a
+                                    href={file.url || "#"}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="block px-3 py-2 font-bold text-[var(--rose-deep)]"
+                                  >
+                                    {file.name}
+                                  </a>
+                                </div>
                               ))}
                             </div>
                           </div>
