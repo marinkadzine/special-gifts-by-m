@@ -15,8 +15,8 @@ export function Hero() {
           Custom gifting, checkout, and order capture in one beautiful store.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--mauve)]">
-          This starter is built for your real catalogue, free-tool workflow, and South African
-          checkout flow with EFT today and room for PayFast next.
+          This storefront is built to launch as a web app first, while staying ready for Android APK
+          and iPhone app packaging when clients prefer an installed mobile experience.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link href="#catalogue" className="button-primary text-center">

@@ -1,15 +1,32 @@
 # Special Gifts by M
 
-A Netlify-ready Next.js storefront for Special Gifts by M, built around your real catalogue and a free-tool workflow using Supabase, GitHub, and Netlify.
+A Next.js storefront for Special Gifts by M that is designed to work as:
 
-## What this starter includes
+- a web app
+- an install-friendly web app
+- and a future Android or iOS packaged app from the same codebase
 
-- Category-driven storefront based on your pricing PDF
+## What this project includes
+
+- Category-driven storefront based on the Special Gifts catalogue
 - Product detail pages with customization controls
-- Cart + checkout flow with EFT / WhatsApp order support
-- Supabase order persistence API route
-- Branding assets and launch-oriented UI
-- SQL schema and seed files for Supabase
+- Cart and checkout flow
+- Supabase-ready order capture with browser-side inserts for web and mobile packaging
+- Branding assets and mobile-friendly UI
+- SQL schema and seed files for the ecommerce backend
+- App manifest and install icons for web-to-mobile readiness
+- Capacitor configuration for Android APK and later iOS packaging
+
+## Core app files
+
+- `src/app/page.tsx`
+- `src/app/shop/[slug]/page.tsx`
+- `src/app/checkout/page.tsx`
+- `src/components/product-customizer.tsx`
+- `src/components/checkout-form.tsx`
+- `capacitor.config.ts`
+- `supabase/schema.sql`
+- `supabase/seed.sql`
 
 ## Local setup
 
@@ -19,57 +36,55 @@ A Netlify-ready Next.js storefront for Special Gifts by M, built around your rea
 npm install
 ```
 
-2. Copy the environment file:
+2. Make sure `.env.local` contains:
 
-```bash
-cp .env.example .env.local
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-3. Add your Supabase values to `.env.local`.
-
-4. Start the app:
+3. Start the app:
 
 ```bash
 npm run dev
 ```
 
+4. Verify:
+
+```bash
+npm run lint
+npm run build
+```
+
 ## Supabase setup
 
 1. Create a new Supabase project.
-2. Open the SQL Editor.
-3. Run `supabase/schema.sql`.
-4. Run `supabase/seed.sql`.
-5. In Project Settings, copy:
-   - `Project URL` -> `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon public key` -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `service_role key` -> `SUPABASE_SERVICE_ROLE_KEY`
+2. Run `supabase/schema.sql` in the SQL Editor.
+3. Run `supabase/seed.sql`.
+4. Add the same two public env vars locally and in Netlify.
 
-## GitHub setup with Git Bash
+## Deployment
 
-```bash
-git init
-git add .
-git commit -m "Initial ecommerce foundation"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/special-gifts-app.git
-git push -u origin main
-```
+- Web app hosting: Netlify
+- Backend: Supabase
+- Version control: GitHub
 
-## Netlify deploy
+## Mobile app path
 
-1. Log into Netlify.
-2. Choose `Add new site` -> `Import an existing project`.
-3. Connect your GitHub repo.
-4. Let Netlify detect the Next.js settings automatically.
-5. Add the same Supabase env vars from `.env.local`.
-6. Deploy the site.
+This repo should not stay web-only.
 
-## Important MVP assumptions
+The intended mobile path is:
 
-- Custom vinyl pricing currently uses `R3 * (width + height)` as an estimate because the price sheet says `R3 per cm` but does not define the exact billing formula.
-- Checkout uses EFT and WhatsApp-first order confirmation to stay free and simple at launch.
-- PayFast can be added next once merchant credentials are available.
+1. Launch as a web app first
+2. Keep the UI mobile-first
+3. Use the included manifest and app icons for install readiness
+4. Use the included Capacitor config to package the same app into:
+   - Android APK / AAB
+   - iOS app project
+
+See `MOBILE_APP_PLAN.md` for the mobile packaging strategy.
 
 ## Security note
 
-- Do not commit secret values such as your Supabase service role key or the PUDO API key to GitHub.
+- Do not commit `.env.local`
+- Do not commit the PUDO API key

@@ -1,13 +1,5 @@
 import { CartItem, DeliveryMethod, Product } from "@/types/store";
 
-export const GIFT_WRAP_FEE = 35;
-
-export const DELIVERY_FEES: Record<DeliveryMethod, number> = {
-  pudo: 110,
-  courier: 120,
-  collection: 0,
-};
-
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
@@ -15,6 +7,14 @@ export function formatCurrency(value: number) {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
+export const GIFT_WRAP_FEE = 35;
+
+export const DELIVERY_FEES: Record<DeliveryMethod, number> = {
+  pudo: 110,
+  courier: 120,
+  collection: 0,
+};
 
 export function calculateVinylPrice(widthCm: number, heightCm: number) {
   const safeWidth = Math.max(widthCm, 5);

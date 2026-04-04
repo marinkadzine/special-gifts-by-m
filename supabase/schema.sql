@@ -39,22 +39,20 @@ create table if not exists public.products (
 alter table public.orders enable row level security;
 alter table public.products enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant select on table public.products to anon, authenticated;
+grant insert on table public.orders to anon, authenticated;
+
+drop policy if exists "Public can read products" on public.products;
 create policy "Public can read products"
 on public.products
 for select
 to anon, authenticated
 using (true);
 
-create policy "Only service role manages orders"
+drop policy if exists "Public can submit orders" on public.orders;
+create policy "Public can submit orders"
 on public.orders
-for all
-to service_role
-using (true)
-with check (true);
-
-create policy "Only service role manages products"
-on public.products
-for all
-to service_role
-using (true)
+for insert
+to anon, authenticated
 with check (true);

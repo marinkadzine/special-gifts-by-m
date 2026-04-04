@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useCart } from "@/components/cart-provider";
 import { buildWhatsAppOrderMessage } from "@/lib/order-message";
 import { calculateCartSubtotal, DELIVERY_FEES, formatCurrency } from "@/lib/pricing";
-import { DeliveryMethod } from "@/types/store";
+import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { CheckoutInput, DeliveryMethod } from "@/types/store";
 
 const WHATSAPP_NUMBER = "27824643498";
 
@@ -16,7 +17,7 @@ export function CheckoutForm() {
   const [submitting, setSubmitting] = useState(false);
 
   const deliveryFee = DELIVERY_FEES[deliveryMethod];
-  const total = useMemo(() => subtotal + deliveryFee, [subtotal, deliveryFee]);
+  const total = subtotal + deliveryFee;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,7 +27,7 @@ export function CheckoutForm() {
     }
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
+    const payload: CheckoutInput = {
       customerName: String(formData.get("customerName") || ""),
       phone: String(formData.get("phone") || ""),
       email: String(formData.get("email") || ""),
@@ -45,24 +46,39 @@ export function CheckoutForm() {
     setStatus("Saving your order...");
 
     try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const orderId = `SGM-${Date.now()}`;
+      const supabase = getBrowserSupabaseClient();
 
-      const result = (await response.json()) as { message?: string; orderId?: string };
+      if (!supabase) {
+        setStatus(`Order ${orderId} captured in demo mode. Connect Supabase to store live orders.`);
+      } else {
+        const { error } = await supabase.from("orders").insert({
+          order_number: orderId,
+          customer_name: payload.customerName,
+          phone: payload.phone,
+          email: payload.email || null,
+          delivery_method: payload.deliveryMethod,
+          delivery_fee: payload.deliveryFee,
+          payment_method: payload.paymentMethod,
+          locker_id: payload.lockerId || null,
+          address: payload.address || null,
+          notes: payload.notes || null,
+          subtotal: payload.subtotal,
+          total: payload.total,
+          status: "pending",
+          items: payload.items,
+        });
 
-      if (!response.ok) {
-        throw new Error(result.message || "Could not submit order.");
+        if (error) {
+          throw new Error(error.message || "Could not submit order.");
+        }
+
+        setStatus(
+          `Order ${orderId} saved. Next step: send final confirmation via WhatsApp or complete EFT follow-up.`,
+        );
       }
 
       const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppOrderMessage(payload)}`;
-      setStatus(
-        `Order ${result.orderId || "draft"} captured. Next step: send final confirmation via WhatsApp or complete EFT follow-up.`,
-      );
       clearCart();
       window.open(whatsappLink, "_blank", "noopener,noreferrer");
       event.currentTarget.reset();

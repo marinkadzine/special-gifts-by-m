@@ -21,12 +21,11 @@ export default function Home() {
             <div className="mt-4 grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
                 <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
-                  Ready for launch in phases
+                  Personalized gifts, apparel, drinkware, and custom print items
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--mauve)]">
-                  This project gives you a modern storefront, product customization, cart, checkout,
-                  Supabase order capture, and a clean path to GitHub + Netlify deployment using free
-                  tools.
+                  Special Gifts by M is now isolated as its own ecommerce storefront with category
+                  browsing, product customization, cart, checkout, and Supabase-ready order capture.
                 </p>
               </div>
               <div className="rounded-[1.5rem] bg-white/75 p-5">
@@ -34,10 +33,11 @@ export default function Home() {
                   Included now
                 </p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--berry)]">
-                  <li>Catalogue and category structure from your PDF</li>
+                  <li>Catalogue and category structure from your pricing list</li>
                   <li>Product detail pages with customization controls</li>
-                  <li>Cart and checkout flow with EFT / WhatsApp fallback</li>
-                  <li>Supabase schema and launch documentation</li>
+                  <li>Cart and checkout flow with EFT and WhatsApp handoff</li>
+                  <li>Supabase schema and launch documentation for this business only</li>
+                  <li>Prepared path for web app, Android APK, and future iPhone packaging</li>
                 </ul>
               </div>
             </div>
@@ -53,7 +53,7 @@ export default function Home() {
                 Catalogue
               </p>
               <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
-                Organized by the real business categories
+                Organized around Special Gifts by M categories
               </h2>
             </div>
             <CategoryPills categories={categories} />
@@ -74,30 +74,36 @@ export default function Home() {
               Launch path
             </p>
             <h2 className="mt-2 font-display text-4xl text-[var(--berry)] md:text-5xl">
-              Free-tool rollout with Supabase, GitHub, and Netlify
+              Supabase, GitHub, and Netlify for this store only
             </h2>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               <div className="rounded-[1.5rem] bg-white/75 p-5">
                 <p className="font-display text-3xl text-[var(--berry)]">1. Supabase</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
-                  Create the project, run the SQL schema in the SQL editor, and add the environment
-                  keys to your local `.env.local`.
+                  Use the ecommerce-only SQL files and connect order capture to one clean project.
                 </p>
               </div>
               <div className="rounded-[1.5rem] bg-white/75 p-5">
                 <p className="font-display text-3xl text-[var(--berry)]">2. GitHub</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
-                  Push this repo to GitHub from Git Bash so your code has version history and is easy
-                  to deploy.
+                  Keep this Special Gifts codebase separate so it stays focused and easy to deploy.
                 </p>
               </div>
               <div className="rounded-[1.5rem] bg-white/75 p-5">
                 <p className="font-display text-3xl text-[var(--berry)]">3. Netlify</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
-                  Connect the GitHub repo, set the same env vars, and deploy your storefront with one
-                  click.
+                  Deploy the storefront independently without mixing in other businesses or dashboards.
                 </p>
               </div>
+            </div>
+            <div className="mt-4 rounded-[1.5rem] bg-[var(--blush)] p-5">
+              <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--rose-deep)]">
+                Client choice
+              </p>
+              <p className="mt-2 text-sm leading-7 text-[var(--berry)]">
+                Special Gifts by M is now planned as a web app first, with a clean Android APK and
+                iPhone packaging path from the same codebase so clients can choose how they want to use it.
+              </p>
             </div>
           </div>
         </section>

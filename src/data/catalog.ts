@@ -178,9 +178,7 @@ export const products: Product[] = [
     summary: "Durable printed display stone in multiple sizes.",
     leadTime: "3-5 business days",
     supportsGiftWrap: true,
-    variantOptions: [
-      { label: "Size", values: ["120x220", "150x150", "150x200", "200x200"] },
-    ],
+    variantOptions: [{ label: "Size", values: ["120x220", "150x150", "150x200", "200x200"] }],
   },
   {
     id: "a4-puzzle",

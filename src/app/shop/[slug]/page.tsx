@@ -5,6 +5,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { formatCurrency } from "@/lib/pricing";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
 }
