@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallAppPrompt } from "@/components/install-app-prompt";
 
 export function Hero() {
   return (
@@ -26,6 +27,7 @@ export function Hero() {
             Setup Supabase + Netlify
           </Link>
         </div>
+        <InstallAppPrompt />
       </div>
     </section>
   );

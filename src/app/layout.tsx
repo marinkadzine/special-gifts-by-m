@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Nunito } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/cart-provider";
+import { PwaRegister } from "@/components/pwa-register";
 
 const displayFont = Cormorant_Garamond({
   variable: "--font-display",
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
   description: "A personalized gifting storefront built for Special Gifts by M.",
   applicationName: "Special Gifts by M",
   manifest: "/manifest.webmanifest",
+  category: "shopping",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -46,7 +48,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} h-full`}>
       <body className="min-h-full">
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <PwaRegister />
+          {children}
+        </CartProvider>
       </body>
     </html>
   );
