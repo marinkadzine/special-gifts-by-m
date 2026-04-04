@@ -79,6 +79,7 @@ export function AccountPanel() {
 
   async function handleSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const supabase = getBrowserSupabaseClient();
 
     if (!supabase) {
@@ -86,7 +87,7 @@ export function AccountPanel() {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const fullName = String(formData.get("fullName") || "").trim();
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "").trim();
@@ -110,7 +111,7 @@ export function AccountPanel() {
       }
 
       setSignupStatus("Your account was created. Check your email if confirmation is enabled, then log in.");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setSignupStatus(error instanceof Error ? error.message : "Could not create your account.");
     } finally {

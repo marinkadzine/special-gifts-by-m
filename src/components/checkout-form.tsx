@@ -69,12 +69,13 @@ export function CheckoutForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     if (!items.length) {
       setStatus("Add at least one item before checkout.");
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload: CheckoutInput = {
       customerId: user?.id,
       customerName: customerName.trim(),
@@ -134,7 +135,7 @@ export function CheckoutForm() {
       const whatsappLink = `https://wa.me/${BUSINESS_CONTACT.phoneLink}?text=${buildWhatsAppOrderMessage(payload)}`;
       clearCart();
       window.open(whatsappLink, "_blank", "noopener,noreferrer");
-      event.currentTarget.reset();
+      form.reset();
       setCustomerName(profile?.full_name || "");
       setEmail(user?.email || "");
     } catch (error) {

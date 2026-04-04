@@ -10,7 +10,8 @@ export function CallbackRequestForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       full_name: String(formData.get("fullName") || ""),
       phone: String(formData.get("phone") || ""),
@@ -44,7 +45,7 @@ export function CallbackRequestForm() {
         throw new Error(error.message || "Could not save your callback request.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       setStatus("Thank you. Special Gifts by M will use your callback details to follow up.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Something went wrong.");

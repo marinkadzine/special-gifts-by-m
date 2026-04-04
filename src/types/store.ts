@@ -27,6 +27,15 @@ export type Product = {
   supportsGiftWrap?: boolean;
 };
 
+export type UploadedReference = {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  path: string;
+};
+
 export type CartItem = {
   cartId: string;
   productId: string;
@@ -48,6 +57,8 @@ export type CartItem = {
   isGift: boolean;
   giftWrap: boolean;
   giftNote?: string;
+  customizationNotes?: string;
+  referenceFiles?: UploadedReference[];
 };
 
 export type DeliveryMethod = "pudo" | "courier" | "collection";

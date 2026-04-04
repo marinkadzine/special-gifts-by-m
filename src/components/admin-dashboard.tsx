@@ -97,6 +97,7 @@ export function AdminDashboard() {
 
   async function handleGallerySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const supabase = getBrowserSupabaseClient();
 
     if (!supabase) {
@@ -104,7 +105,7 @@ export function AdminDashboard() {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       title: String(formData.get("title") || ""),
       category: String(formData.get("category") || ""),
@@ -132,7 +133,7 @@ export function AdminDashboard() {
     }
 
     setGalleryItems((current) => [data as GalleryItem, ...current]);
-    event.currentTarget.reset();
+    form.reset();
     setStatus("Gallery item added.");
   }
 
