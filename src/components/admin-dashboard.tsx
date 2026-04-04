@@ -7,6 +7,7 @@ import { CallbackRequest, GalleryItem, OrderRecord, Profile } from "@/types/stor
 import { formatCurrency } from "@/lib/pricing";
 
 const ORDER_STATUSES = ["pending", "paid", "processing", "ready", "shipped", "completed"] as const;
+const CALLBACK_STATUSES = ["new", "contacted", "closed"] as const;
 
 export function AdminDashboard() {
   const { isAdmin, loading, user } = useAuth();
@@ -76,21 +77,31 @@ export function AdminDashboard() {
     const supabase = getBrowserSupabaseClient();
 
     if (!supabase) {
+      setStatus("Supabase is not connected yet, so callback updates cannot be saved.");
       return;
     }
 
-    const { error } = await supabase
+    setStatus("Updating callback request...");
+
+    const { data, error } = await supabase
       .from("callback_requests")
       .update({ status: nextStatus } as never)
-      .eq("id", requestId);
+      .eq("id", requestId)
+      .select("id, full_name, phone, email, preferred_time, message, status, created_at")
+      .maybeSingle();
 
     if (error) {
       setStatus(error.message);
       return;
     }
 
+    if (!data) {
+      setStatus("Callback status did not save. Please re-run the latest Supabase schema, then try again.");
+      return;
+    }
+
     setCallbacks((current) =>
-      current.map((request) => (request.id === requestId ? { ...request, status: nextStatus } : request)),
+      current.map((request) => (request.id === requestId ? ((data as CallbackRequest) ?? request) : request)),
     );
     setStatus("Callback request updated.");
   }
@@ -217,23 +228,47 @@ export function AdminDashboard() {
                 </div>
                 {order.notes ? <p className="mt-3 text-sm text-[var(--mauve)]">Notes: {order.notes}</p> : null}
                 {order.items?.length ? (
-                  <div className="mt-4 space-y-3 rounded-[1rem] bg-[var(--light-grey)] p-3">
+                  <div className="mt-4 rounded-[1rem] bg-[var(--light-grey)] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[var(--mauve)]">
+                        Artwork & print instructions
+                      </p>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[var(--rose-deep)]">
+                        {order.items.length} item{order.items.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
+                      Open each item below to see the customer instructions and any uploaded logos, photos, or reference files.
+                    </p>
+                    <div className="mt-4 space-y-3">
                     {order.items.map((item) => (
-                      <div key={item.cartId} className="rounded-[1rem] bg-white px-3 py-3">
+                      <div key={item.cartId} className="rounded-[1rem] bg-white px-4 py-4">
                         <p className="font-bold text-[var(--berry)]">
                           {item.quantity} x {item.name}
                         </p>
+                        <p className="mt-1 text-sm text-[var(--mauve)]">
+                          {[item.size, item.color, item.variant, item.printSize].filter(Boolean).join(" | ") ||
+                            "Standard configuration"}
+                        </p>
                         {item.customizationNotes ? (
-                          <p className="mt-1 text-sm text-[var(--mauve)]">
-                            Print instructions: {item.customizationNotes}
-                          </p>
+                          <div className="mt-3 rounded-[1rem] bg-[var(--light-grey)] px-3 py-3">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--mauve)]">
+                              Client instructions
+                            </p>
+                            <p className="mt-2 text-sm leading-7 text-[var(--berry)]">{item.customizationNotes}</p>
+                          </div>
                         ) : null}
                         {item.referenceFiles?.length ? (
-                          <div className="mt-2 text-sm text-[var(--mauve)]">
-                            <p>Uploaded references:</p>
-                            <div className="mt-1 flex flex-wrap gap-2">
+                          <div className="mt-3 text-sm text-[var(--mauve)]">
+                            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--mauve)]">
+                              Uploaded references
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-3">
                               {item.referenceFiles.map((file) => (
-                                <div key={file.id} className="overflow-hidden rounded-[1rem] border border-[var(--line)] bg-white">
+                                <div
+                                  key={file.id}
+                                  className="overflow-hidden rounded-[1rem] border border-[var(--line)] bg-white shadow-sm"
+                                >
                                   {file.type.startsWith("image/") && file.url ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={file.url} alt={file.name} className="h-28 w-28 object-cover" />
@@ -242,7 +277,7 @@ export function AdminDashboard() {
                                     href={file.url || "#"}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="block px-3 py-2 font-bold text-[var(--rose-deep)]"
+                                    className="block max-w-28 px-3 py-2 text-sm font-bold text-[var(--rose-deep)]"
                                   >
                                     {file.name}
                                   </a>
@@ -250,9 +285,17 @@ export function AdminDashboard() {
                               ))}
                             </div>
                           </div>
+                        ) : (
+                          <p className="mt-3 text-sm text-[var(--mauve)]">No reference files were uploaded for this item.</p>
+                        )}
+                        {!item.customizationNotes && !item.referenceFiles?.length ? (
+                          <p className="mt-3 text-sm font-bold text-[var(--rose-deep)]">
+                            This order line was saved without client instructions or uploaded artwork.
+                          </p>
                         ) : null}
                       </div>
                     ))}
+                    </div>
                   </div>
                 ) : null}
               </article>
@@ -267,19 +310,43 @@ export function AdminDashboard() {
               {callbacks.length ? (
                 callbacks.map((request) => (
                   <div key={request.id} className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 p-4">
-                    <p className="font-bold text-[var(--berry)]">{request.full_name}</p>
-                    <p className="text-sm text-[var(--mauve)]">{request.phone}</p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-[var(--berry)]">{request.full_name}</p>
+                        <p className="text-sm text-[var(--mauve)]">{request.phone}</p>
+                      </div>
+                      <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rose-deep)]">
+                        {request.status}
+                      </span>
+                    </div>
                     {request.preferred_time ? (
                       <p className="text-sm text-[var(--mauve)]">Preferred time: {request.preferred_time}</p>
                     ) : null}
                     {request.message ? <p className="mt-2 text-sm text-[var(--mauve)]">{request.message}</p> : null}
-                    <button
-                      type="button"
-                      className="button-secondary mt-3 px-4 py-2 text-sm"
-                      onClick={() => updateCallbackStatus(request.id, "contacted")}
-                    >
-                      Mark as contacted
-                    </button>
+                    <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center">
+                      <select
+                        value={request.status}
+                        onChange={(event) => updateCallbackStatus(request.id, event.target.value)}
+                        className="rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--berry)]"
+                      >
+                        {CALLBACK_STATUSES.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                      {request.status !== "contacted" ? (
+                        <button
+                          type="button"
+                          className="button-secondary px-4 py-2 text-sm"
+                          onClick={() => updateCallbackStatus(request.id, "contacted")}
+                        >
+                          Mark as contacted
+                        </button>
+                      ) : (
+                        <p className="text-sm font-bold text-[var(--mauve)]">Already marked as contacted.</p>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
