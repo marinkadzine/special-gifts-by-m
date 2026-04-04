@@ -9,6 +9,7 @@ export function buildWhatsAppOrderMessage(order: CheckoutInput) {
     `Phone: ${order.phone}`,
     `Email: ${order.email || "Not provided"}`,
     `Delivery: ${order.deliveryMethod}`,
+    order.pudoSize ? `Estimated PUDO Size: ${order.pudoSize}` : "",
     order.lockerId ? `PUDO Locker: ${order.lockerId}` : "",
     order.address ? `Address: ${order.address}` : "",
     "",
@@ -32,7 +33,7 @@ export function buildWhatsAppOrderMessage(order: CheckoutInput) {
     `Subtotal: ${formatCurrency(order.subtotal)}`,
     `Delivery: ${formatCurrency(order.deliveryFee)}`,
     `Total: ${formatCurrency(order.total)}`,
-    `Payment method: ${order.paymentMethod.toUpperCase()}`,
+    `Payment method: ${order.paymentMethod.replaceAll("_", " ").toUpperCase()}`,
     order.notes ? `Checkout notes: ${order.notes}` : "",
   ].filter(Boolean);
 

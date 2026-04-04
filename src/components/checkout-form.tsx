@@ -1,23 +1,71 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
+import {
+  BUSINESS_CONTACT,
+  EFT_DETAILS,
+  PAYFAST_STATUS_NOTE,
+  PICKUP_DETAILS,
+  SCAN_TO_PAY_STATUS_NOTE,
+} from "@/lib/business-details";
 import { buildWhatsAppOrderMessage } from "@/lib/order-message";
-import { calculateCartSubtotal, DELIVERY_FEES, formatCurrency } from "@/lib/pricing";
+import {
+  calculateCartSubtotal,
+  estimatePudoLockerSize,
+  formatCurrency,
+  getDeliveryFee,
+  PUDO_LOCKER_OPTIONS,
+} from "@/lib/pricing";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
-import { CheckoutInput, DeliveryMethod } from "@/types/store";
+import { CheckoutInput, DeliveryMethod, PaymentMethod } from "@/types/store";
 
-const WHATSAPP_NUMBER = "27824643498";
+const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; note: string }[] = [
+  {
+    value: "eft",
+    label: "EFT",
+    note: `${EFT_DETAILS.bank} | Acc ${EFT_DETAILS.accountNumber}`,
+  },
+  {
+    value: "payfast",
+    label: "PayFast",
+    note: PAYFAST_STATUS_NOTE,
+  },
+  {
+    value: "scan_to_pay",
+    label: "Scan to Pay",
+    note: SCAN_TO_PAY_STATUS_NOTE,
+  },
+];
 
 export function CheckoutForm() {
   const { items, clearCart } = useCart();
+  const { user, profile } = useAuth();
   const subtotal = calculateCartSubtotal(items);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("pudo");
-  const [status, setStatus] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("eft");
+  const [customerName, setCustomerName] = useState("");
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const deliveryFee = DELIVERY_FEES[deliveryMethod];
+  const pudoSize = estimatePudoLockerSize(items);
+  const deliveryFee = getDeliveryFee(deliveryMethod, items);
   const total = subtotal + deliveryFee;
+
+  useEffect(() => {
+    const suggestedName =
+      profile?.full_name || String(user?.user_metadata.full_name || user?.email || "").split("@")[0];
+
+    if (!customerName && suggestedName) {
+      setCustomerName(suggestedName);
+    }
+
+    if (!email && user?.email) {
+      setEmail(user.email);
+    }
+  }, [customerName, email, profile?.full_name, user?.email, user?.user_metadata.full_name]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,14 +76,19 @@ export function CheckoutForm() {
 
     const formData = new FormData(event.currentTarget);
     const payload: CheckoutInput = {
-      customerName: String(formData.get("customerName") || ""),
+      customerId: user?.id,
+      customerName: customerName.trim(),
       phone: String(formData.get("phone") || ""),
-      email: String(formData.get("email") || ""),
+      email: email.trim(),
       deliveryMethod,
+      pudoSize: deliveryMethod === "pudo" ? pudoSize : undefined,
       lockerId: String(formData.get("lockerId") || ""),
-      address: String(formData.get("address") || ""),
+      address:
+        deliveryMethod === "collection"
+          ? PICKUP_DETAILS.address
+          : String(formData.get("address") || ""),
       notes: String(formData.get("notes") || ""),
-      paymentMethod: String(formData.get("paymentMethod") || "eft") as "eft" | "whatsapp",
+      paymentMethod,
       items,
       subtotal,
       deliveryFee,
@@ -54,12 +107,14 @@ export function CheckoutForm() {
       } else {
         const { error } = await supabase.from("orders").insert({
           order_number: orderId,
+          customer_id: payload.customerId ?? null,
           customer_name: payload.customerName,
           phone: payload.phone,
           email: payload.email || null,
           delivery_method: payload.deliveryMethod,
           delivery_fee: payload.deliveryFee,
           payment_method: payload.paymentMethod,
+          pudo_size: payload.pudoSize || null,
           locker_id: payload.lockerId || null,
           address: payload.address || null,
           notes: payload.notes || null,
@@ -67,21 +122,21 @@ export function CheckoutForm() {
           total: payload.total,
           status: "pending",
           items: payload.items,
-        });
+        } as never);
 
         if (error) {
           throw new Error(error.message || "Could not submit order.");
         }
 
-        setStatus(
-          `Order ${orderId} saved. Next step: send final confirmation via WhatsApp or complete EFT follow-up.`,
-        );
+        setStatus(`Order ${orderId} saved. The team can now follow up with your chosen payment method.`);
       }
 
-      const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppOrderMessage(payload)}`;
+      const whatsappLink = `https://wa.me/${BUSINESS_CONTACT.phoneLink}?text=${buildWhatsAppOrderMessage(payload)}`;
       clearCart();
       window.open(whatsappLink, "_blank", "noopener,noreferrer");
       event.currentTarget.reset();
+      setCustomerName(profile?.full_name || "");
+      setEmail(user?.email || "");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Something went wrong.");
     } finally {
@@ -102,11 +157,27 @@ export function CheckoutForm() {
         </div>
       </div>
 
+      {user ? (
+        <div className="mt-5 rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+          Signed in as <strong>{user.email}</strong>. This order will be linked to your customer account.
+        </div>
+      ) : (
+        <div className="mt-5 rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+          Guests can still order, but customers who sign up can keep login details and view account-linked orders later.
+        </div>
+      )}
+
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm text-[var(--berry)]">
             Full name
-            <input required name="customerName" className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3" />
+            <input
+              required
+              name="customerName"
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+            />
           </label>
           <label className="text-sm text-[var(--berry)]">
             Phone / WhatsApp
@@ -116,7 +187,13 @@ export function CheckoutForm() {
 
         <label className="block text-sm text-[var(--berry)]">
           Email
-          <input name="email" type="email" className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3" />
+          <input
+            name="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+          />
         </label>
 
         <div>
@@ -126,17 +203,19 @@ export function CheckoutForm() {
           <div className="grid gap-3 md:grid-cols-3">
             {(["pudo", "courier", "collection"] as DeliveryMethod[]).map((option) => {
               const active = option === deliveryMethod;
+              const optionFee = getDeliveryFee(option, items);
+
               return (
                 <button
                   key={option}
                   type="button"
                   onClick={() => setDeliveryMethod(option)}
                   className={`rounded-[1.2rem] border px-4 py-3 text-left ${
-                    active ? "border-[var(--rose)] bg-[var(--blush)]" : "border-[var(--line)] bg-white/80"
+                    active ? "border-[var(--rose)] bg-[var(--soft-rose)]" : "border-[var(--line)] bg-white/80"
                   }`}
                 >
                   <span className="block font-bold capitalize text-[var(--berry)]">{option}</span>
-                  <span className="text-sm text-[var(--mauve)]">{formatCurrency(DELIVERY_FEES[option])}</span>
+                  <span className="text-sm text-[var(--mauve)]">{formatCurrency(optionFee)}</span>
                 </button>
               );
             })}
@@ -144,15 +223,30 @@ export function CheckoutForm() {
         </div>
 
         {deliveryMethod === "pudo" ? (
-          <label className="block text-sm text-[var(--berry)]">
-            PUDO locker ID
-            <input
-              name="lockerId"
-              placeholder="Enter locker ID or preferred locker area"
-              className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
-            />
-          </label>
-        ) : deliveryMethod === "courier" ? (
+          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/75 p-4">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
+              PUDO locker estimate
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[var(--berry)]">
+              Cart-based estimate: <strong>{PUDO_LOCKER_OPTIONS[pudoSize].label}</strong> ({pudoSize}) |{" "}
+              {PUDO_LOCKER_OPTIONS[pudoSize].dimensions} | {formatCurrency(PUDO_LOCKER_OPTIONS[pudoSize].fee)}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
+              The brief asked for locker sizing to be worked out automatically from the cart before payment.
+              This estimate uses item count so the delivery charge is included up front.
+            </p>
+            <label className="mt-4 block text-sm text-[var(--berry)]">
+              Preferred PUDO locker ID or area
+              <input
+                name="lockerId"
+                placeholder="Enter locker ID or preferred locker area"
+                className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+              />
+            </label>
+          </div>
+        ) : null}
+
+        {deliveryMethod === "courier" ? (
           <label className="block text-sm text-[var(--berry)]">
             Delivery address
             <textarea
@@ -162,20 +256,53 @@ export function CheckoutForm() {
           </label>
         ) : null}
 
+        {deliveryMethod === "collection" ? (
+          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/75 p-4 text-sm leading-7 text-[var(--berry)]">
+            <p className="font-bold">{PICKUP_DETAILS.label}</p>
+            <p className="mt-2 text-[var(--mauve)]">{PICKUP_DETAILS.address}</p>
+            <p className="mt-2 text-[var(--mauve)]">{PICKUP_DETAILS.note}</p>
+          </div>
+        ) : null}
+
         <div>
           <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
             Payment method
           </p>
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm text-[var(--berry)]">
-              <input className="mr-2" type="radio" name="paymentMethod" value="eft" defaultChecked />
-              EFT now
-            </label>
-            <label className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm text-[var(--berry)]">
-              <input className="mr-2" type="radio" name="paymentMethod" value="whatsapp" />
-              WhatsApp confirmation
-            </label>
+          <div className="grid gap-3">
+            {PAYMENT_OPTIONS.map((option) => {
+              const active = paymentMethod === option.value;
+
+              return (
+                <label
+                  key={option.value}
+                  className={`rounded-[1.2rem] border px-4 py-3 text-sm ${
+                    active ? "border-[var(--rose)] bg-[var(--soft-rose)]" : "border-[var(--line)] bg-white/80"
+                  }`}
+                >
+                  <input
+                    className="mr-2"
+                    type="radio"
+                    name="paymentMethod"
+                    value={option.value}
+                    checked={active}
+                    onChange={() => setPaymentMethod(option.value)}
+                  />
+                  <span className="font-bold text-[var(--berry)]">{option.label}</span>
+                  <span className="mt-2 block text-[var(--mauve)]">{option.note}</span>
+                </label>
+              );
+            })}
           </div>
+
+          {paymentMethod === "eft" ? (
+            <div className="mt-3 rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+              <p className="font-bold">{EFT_DETAILS.accountName}</p>
+              <p>{EFT_DETAILS.bank}</p>
+              <p>Account Number: {EFT_DETAILS.accountNumber}</p>
+              <p>SWIFT/BIC: {EFT_DETAILS.swift}</p>
+              <p>Branch Code: {EFT_DETAILS.branchCode}</p>
+            </div>
+          ) : null}
         </div>
 
         <label className="block text-sm text-[var(--berry)]">

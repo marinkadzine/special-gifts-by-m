@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: "com.specialgiftsbym.app",
   appName: "Special Gifts by M",
   webDir: "out",
-  backgroundColor: "#fff8fb",
+  backgroundColor: "#F6D1DC",
   server: {
     androidScheme: "https",
   },

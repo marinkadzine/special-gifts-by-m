@@ -51,18 +51,70 @@ export type CartItem = {
 };
 
 export type DeliveryMethod = "pudo" | "courier" | "collection";
+export type PaymentMethod = "eft" | "payfast" | "scan_to_pay";
+export type PudoLockerSize = "XS" | "S" | "M" | "L" | "XL";
 
 export type CheckoutInput = {
+  customerId?: string;
   customerName: string;
   phone: string;
   email?: string;
   deliveryMethod: DeliveryMethod;
+  pudoSize?: PudoLockerSize;
   lockerId?: string;
   address?: string;
   notes?: string;
-  paymentMethod: "eft" | "whatsapp";
+  paymentMethod: PaymentMethod;
   items: CartItem[];
   subtotal: number;
   deliveryFee: number;
   total: number;
+};
+
+export type Profile = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: "customer" | "admin";
+  created_at: string;
+};
+
+export type OrderRecord = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  phone: string;
+  email: string | null;
+  delivery_method: DeliveryMethod;
+  delivery_fee: number;
+  payment_method: PaymentMethod;
+  locker_id: string | null;
+  pudo_size: PudoLockerSize | null;
+  address: string | null;
+  notes: string | null;
+  subtotal: number;
+  total: number;
+  status: string;
+  created_at: string;
+};
+
+export type CallbackRequest = {
+  id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  preferred_time: string | null;
+  message: string | null;
+  status: string;
+  created_at: string;
+};
+
+export type GalleryItem = {
+  id: string;
+  title: string;
+  category: string | null;
+  image_url: string;
+  caption: string | null;
+  featured: boolean;
+  created_at: string;
 };

@@ -152,8 +152,8 @@ export function ProductCustomizer({ product }: { product: Product }) {
               </label>
             </div>
             <p className="mt-3 text-sm text-[var(--mauve)]">
-              Live estimate: {formatCurrency(vinylPrice)} based on the current edge-length pricing
-              assumption.
+              Live estimate: {formatCurrency(vinylPrice)} based on the current width x height x R3
+              pricing rule.
             </p>
           </div>
         ) : null}

@@ -1,8 +1,11 @@
+import { CallbackRequestForm } from "@/components/callback-request-form";
 import { categories, featuredProducts, products } from "@/data/catalog";
 import { CatalogueSection } from "@/components/catalogue-section";
 import { CategoryPills } from "@/components/category-pills";
 import { FeaturedProducts } from "@/components/featured-products";
+import { GallerySection } from "@/components/gallery-section";
 import { Hero } from "@/components/hero";
+import { DEVELOPER_CREDIT } from "@/lib/business-details";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -45,6 +48,8 @@ export default function Home() {
         </section>
 
         <FeaturedProducts products={featuredProducts} />
+
+        <GallerySection />
 
         <section id="catalogue" className="shell">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -105,6 +110,24 @@ export default function Home() {
                 iPhone packaging path from the same codebase so clients can choose how they want to use it.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="shell">
+          <CallbackRequestForm />
+        </section>
+
+        <section className="shell">
+          <div className="rounded-[2rem] border border-white/40 bg-white/58 px-6 py-5 text-center shadow-[var(--shadow)]">
+            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
+              App development credit
+            </p>
+            <p className="mt-3 text-sm leading-7 text-[var(--berry)]">
+              App Development by {DEVELOPER_CREDIT.name}
+            </p>
+            <p className="text-sm leading-7 text-[var(--mauve)]">
+              Contact: {DEVELOPER_CREDIT.phoneDisplay} | Email: {DEVELOPER_CREDIT.email}
+            </p>
           </div>
         </section>
       </div>

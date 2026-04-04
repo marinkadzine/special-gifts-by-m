@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Nunito } from "next/font/google";
+import { Allura, Cormorant_Garamond, Poppins } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { PwaRegister } from "@/components/pwa-register";
 
@@ -10,10 +11,16 @@ const displayFont = Cormorant_Garamond({
   weight: ["400", "500", "600", "700"],
 });
 
-const bodyFont = Nunito({
+const bodyFont = Poppins({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const signatureFont = Allura({
+  variable: "--font-signature",
+  subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +44,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ff4dae",
+  themeColor: "#FF4FA3",
 };
 
 export default function RootLayout({
@@ -46,12 +53,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} h-full`}>
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${signatureFont.variable} h-full`}>
       <body className="min-h-full">
-        <CartProvider>
-          <PwaRegister />
-          {children}
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <PwaRegister />
+            {children}
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
