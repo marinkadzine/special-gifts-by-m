@@ -65,9 +65,10 @@ npm run build
 
 ## Deployment
 
-- Web app hosting: Netlify
+- Web app hosting: Cloudflare Pages Free
 - Backend: Supabase
 - Version control: GitHub
+- Online Android APK build: GitHub Actions
 
 ## Mobile app path
 
@@ -83,6 +84,7 @@ The intended mobile path is:
    - iOS app project
 
 See `MOBILE_APP_PLAN.md` for the mobile packaging strategy.
+See `GITHUB_APK_BUILD.md` for the online APK workflow.
 
 ## Security note
 
