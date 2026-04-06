@@ -58,7 +58,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
   }
 
   function handleAddToCart() {
-    if (!referenceFiles.length) {
+    if (product.storeSection === "personalized" && !referenceFiles.length) {
       setUploadStatus("Please upload at least one logo, photo, or design reference before adding this item.");
       return;
     }
@@ -70,6 +70,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
       slug: product.slug,
       name: product.name,
       category: product.category,
+      storeSection: product.storeSection,
       basePrice: product.basePrice,
       totalPrice: lineTotal,
       quantity,
@@ -101,9 +102,11 @@ export function ProductCustomizer({ product }: { product: Product }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
-            Customize your order
+            {product.storeSection === "personalized" ? "Customize your order" : "Choose your item"}
           </p>
-          <h2 className="mt-2 font-display text-4xl text-[var(--berry)]">Build this item</h2>
+          <h2 className="mt-2 font-display text-4xl text-[var(--berry)]">
+            {product.storeSection === "personalized" ? "Build this item" : "Prepare this gift"}
+          </h2>
         </div>
         <span className="rounded-full bg-[var(--blush)] px-4 py-2 text-sm font-extrabold text-[var(--rose-deep)]">
           {formatCurrency(lineTotal)}
@@ -219,7 +222,11 @@ export function ProductCustomizer({ product }: { product: Product }) {
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
             Upload logos, photos, or design references
           </p>
-          <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">Required for every order item.</p>
+          <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">
+            {product.storeSection === "personalized"
+              ? "Required for personalized items."
+              : "Optional for ready-made items."}
+          </p>
           <label className="mt-3 block text-sm text-[var(--berry)]">
             Choose one or more files
             <input

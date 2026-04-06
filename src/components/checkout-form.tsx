@@ -9,7 +9,6 @@ import {
   EFT_DETAILS,
   PAYFAST_STATUS_NOTE,
   PICKUP_DETAILS,
-  SCAN_TO_PAY_STATUS_NOTE,
 } from "@/lib/business-details";
 import { buildWhatsAppOrderMessage } from "@/lib/order-message";
 import {
@@ -20,6 +19,7 @@ import {
   PUDO_LOCKER_OPTIONS,
 } from "@/lib/pricing";
 import { getItemsMissingCustomization, serializeOrderItems } from "@/lib/order-items";
+import { PudoLockerMapHelper } from "@/components/pudo-locker-map-helper";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { CheckoutInput, DeliveryMethod, PaymentMethod } from "@/types/store";
 
@@ -33,11 +33,6 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; note: string }[] =
     value: "payfast",
     label: "PayFast",
     note: PAYFAST_STATUS_NOTE,
-  },
-  {
-    value: "scan_to_pay",
-    label: "Scan to Pay",
-    note: SCAN_TO_PAY_STATUS_NOTE,
   },
 ];
 
@@ -96,7 +91,7 @@ export function CheckoutForm() {
 
     if (incompleteItems.length) {
       setStatus(
-        `Please remove and re-add these item(s) with at least one uploaded artwork/reference file first: ${incompleteItems
+        `Please remove and re-add these personalized item(s) with at least one uploaded artwork/reference file first: ${incompleteItems
           .map((item) => item.name)
           .join(", ")}.`,
       );
@@ -104,6 +99,12 @@ export function CheckoutForm() {
     }
 
     const formData = new FormData(form);
+
+    if (formData.get("termsAccepted") !== "on") {
+      setStatus("Please accept the order terms and delivery note before placing your order.");
+      return;
+    }
+
     const serializedItems = serializeOrderItems(items);
     const payload: CheckoutInput = {
       customerId: user?.id,
@@ -199,8 +200,8 @@ export function CheckoutForm() {
 
       <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
         <div className="rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
-          Every product must include at least one uploaded artwork or reference file before checkout. Written
-          instructions are optional, but still recommended.
+          Every personalized product must include at least one uploaded artwork or reference file before
+          checkout. Written instructions are optional, but still recommended.
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -270,6 +271,7 @@ export function CheckoutForm() {
               The brief asked for locker sizing to be worked out automatically from the cart before payment.
               This estimate uses item count so the delivery charge is included up front.
             </p>
+            <PudoLockerMapHelper />
             <label className="mt-4 block text-sm text-[var(--berry)]">
               Preferred PUDO locker ID or area
               <input
@@ -347,6 +349,15 @@ export function CheckoutForm() {
             className="mt-2 min-h-28 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
             placeholder="Anything special we should know?"
           />
+        </label>
+
+        <label className="flex items-start gap-3 rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+          <input type="checkbox" name="termsAccepted" className="mt-1" />
+          <span>
+            I understand that the typical lead time can be around 7 days, Special Gifts by M is not liable
+            for courier or delivery delays once an order has been handed over, and personalized orders can
+            only move ahead once artwork, payment, and delivery details are confirmed.
+          </span>
         </label>
 
         <div className="rounded-[1.5rem] bg-[var(--berry)] px-5 py-4 text-white">

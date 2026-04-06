@@ -1,9 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/store";
 import { formatCurrency } from "@/lib/pricing";
+import { useWishlist } from "@/components/wishlist-provider";
 
 export function ProductCard({ product }: { product: Product }) {
+  const { hasItem, toggleItem } = useWishlist();
+  const inWishlist = hasItem(product.slug);
+
   return (
     <article className="glass card-hover rounded-[1.75rem] p-5">
       <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-[1.5rem] border border-white/50 bg-[linear-gradient(160deg,rgba(255,242,248,1),rgba(244,229,240,1))]">
@@ -26,6 +32,13 @@ export function ProductCard({ product }: { product: Product }) {
             {product.category}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => toggleItem(product.slug)}
+          className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--rose-deep)] shadow-sm"
+        >
+          {inWishlist ? "Saved" : "Wishlist"}
+        </button>
       </div>
 
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -59,7 +72,7 @@ export function ProductCard({ product }: { product: Product }) {
           Lead time: {product.leadTime}
         </p>
         <Link href={`/shop/${product.slug}`} className="button-secondary px-4 py-2 text-sm">
-          Customize
+          {product.storeSection === "personalized" ? "Customize" : "View Item"}
         </Link>
       </div>
     </article>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { CartProvider } from "@/components/cart-provider";
 import { PwaRegister } from "@/components/pwa-register";
+import { WishlistProvider } from "@/components/wishlist-provider";
 
 const displayFont = Cormorant_Garamond({
   variable: "--font-display",
@@ -56,10 +57,12 @@ export default function RootLayout({
     <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${signatureFont.variable} h-full`}>
       <body className="min-h-full">
         <AuthProvider>
-          <CartProvider>
-            <PwaRegister />
-            {children}
-          </CartProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <PwaRegister />
+              {children}
+            </CartProvider>
+          </WishlistProvider>
         </AuthProvider>
       </body>
     </html>

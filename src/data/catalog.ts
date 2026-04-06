@@ -60,7 +60,17 @@ export const categories = [
   "Stickers",
 ];
 
-export const products: Product[] = [
+const readyMadeProductSlugs = new Set([
+  "photo-stone-slab",
+  "custom-a4-puzzle",
+  "custom-gift-bag",
+  "wine-tumbler",
+  "skinny-tumbler",
+  "ceramic-coffee-mug",
+  "christmas-hat",
+]);
+
+const baseProducts: Omit<Product, "storeSection">[] = [
   {
     id: "adult-essential-tee",
     slug: "adult-essential-tee",
@@ -382,7 +392,16 @@ export const products: Product[] = [
   },
 ];
 
+export const products: Product[] = baseProducts.map((product) => ({
+  ...product,
+  storeSection: readyMadeProductSlugs.has(product.slug) ? "ready-made" : "personalized",
+}));
+
 export const featuredProducts = products.filter((product) => product.featured);
+
+export const personalizedProducts = products.filter((product) => product.storeSection === "personalized");
+
+export const readyMadeProducts = products.filter((product) => product.storeSection === "ready-made");
 
 export const getProductBySlug = (slug: string) =>
   products.find((product) => product.slug === slug);

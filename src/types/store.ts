@@ -8,11 +8,14 @@ export type PrintSizeOption = {
   price: number;
 };
 
+export type StoreSection = "personalized" | "ready-made";
+
 export type Product = {
   id: string;
   slug: string;
   name: string;
   category: string;
+  storeSection: StoreSection;
   basePrice: number;
   description: string;
   leadTime: string;
@@ -42,6 +45,7 @@ export type CartItem = {
   slug: string;
   name: string;
   category: string;
+  storeSection: StoreSection;
   basePrice: number;
   totalPrice: number;
   quantity: number;

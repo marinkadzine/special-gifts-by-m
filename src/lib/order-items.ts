@@ -12,6 +12,10 @@ function cleanReferenceFile(file: UploadedReference): UploadedReference {
 }
 
 export function itemHasCustomizationDetails(item: CartItem) {
+  if (item.storeSection === "ready-made") {
+    return true;
+  }
+
   return Boolean(item.referenceFiles?.length);
 }
 

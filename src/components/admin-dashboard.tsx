@@ -288,7 +288,7 @@ export function AdminDashboard() {
                         ) : (
                           <p className="mt-3 text-sm text-[var(--mauve)]">No reference files were uploaded for this item.</p>
                         )}
-                        {!item.customizationNotes && !item.referenceFiles?.length ? (
+                        {item.storeSection === "personalized" && !item.customizationNotes && !item.referenceFiles?.length ? (
                           <p className="mt-3 text-sm font-bold text-[var(--rose-deep)]">
                             This order line was saved without any uploaded artwork or reference file.
                           </p>

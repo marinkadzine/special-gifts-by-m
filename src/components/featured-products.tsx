@@ -7,7 +7,7 @@ export function FeaturedProducts({ products }: { products: Product[] }) {
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">
-            Featured
+            Featured Items
           </p>
           <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
             Best first products to launch with

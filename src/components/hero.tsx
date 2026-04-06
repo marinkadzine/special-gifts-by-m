@@ -10,21 +10,21 @@ export function Hero() {
       />
       <div className="relative z-10 max-w-2xl fade-up">
         <p className="mb-3 text-sm font-extrabold uppercase tracking-[0.34em] text-[var(--mauve)]">
-          Full Ecommerce Foundation
+          Special Gifts by M
         </p>
         <h1 className="font-display text-5xl leading-none text-[var(--berry)] md:text-7xl">
-          Custom gifting, checkout, and order capture in one beautiful store.
+          Personalized gifts and ready-made picks in one soft, elegant app.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--mauve)]">
-          This storefront is built to launch as a web app first, while staying ready for Android APK
-          and iPhone app packaging when clients prefer an installed mobile experience.
+          Browse featured items, save a wishlist, upload artwork for custom products, and place gift
+          orders from the same web and mobile-ready shopping experience.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="#catalogue" className="button-primary text-center">
-            Browse Catalogue
+          <Link href="#store-personalized" className="button-primary text-center">
+            Shop Personalized
           </Link>
-          <Link href="#launch-guide" className="button-secondary text-center">
-            Setup Supabase + Netlify
+          <Link href="#store-ready-made" className="button-secondary text-center">
+            Shop Ready-Made
           </Link>
         </div>
         <InstallAppPrompt />
