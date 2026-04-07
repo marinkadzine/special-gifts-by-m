@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AdminProductsManager } from "@/components/admin-products-manager";
 import { useAuth } from "@/components/auth-provider";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { CallbackRequest, GalleryItem, OrderRecord, Profile } from "@/types/store";
@@ -185,6 +186,7 @@ export function AdminDashboard() {
         </h2>
         <p className="mt-3 max-w-3xl text-base leading-8 text-[var(--mauve)]">
           This dashboard is restricted to the approved admin email list from the business brief.
+          Orders, callbacks, gallery updates, and store item changes all happen here.
         </p>
         {status ? <p className="mt-4 text-sm text-[var(--mauve)]">{status}</p> : null}
       </div>
@@ -430,6 +432,8 @@ export function AdminDashboard() {
           </div>
         </section>
       </div>
+
+      <AdminProductsManager />
     </section>
   );
 }

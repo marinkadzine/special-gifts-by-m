@@ -184,6 +184,40 @@ create table if not exists public.products (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.products
+  add column if not exists store_section text not null default 'personalized';
+
+alter table public.products
+  add column if not exists badges jsonb;
+
+alter table public.products
+  add column if not exists image_url text;
+
+alter table public.products
+  add column if not exists gallery_images jsonb;
+
+alter table public.products
+  add column if not exists active boolean not null default true;
+
+alter table public.products
+  drop constraint if exists products_store_section_check;
+
+alter table public.products
+  add constraint products_store_section_check
+  check (store_section in ('personalized', 'ready-made'));
+
+update public.products
+set store_section = 'ready-made'
+where slug in (
+  'photo-stone-slab',
+  'custom-a4-puzzle',
+  'custom-gift-bag',
+  'wine-tumbler',
+  'skinny-tumbler',
+  'ceramic-coffee-mug',
+  'christmas-hat'
+);
+
 alter table public.orders enable row level security;
 alter table public.products enable row level security;
 alter table public.profiles enable row level security;
@@ -197,6 +231,7 @@ grant select on table public.gallery_items to anon, authenticated;
 grant insert on table public.orders to anon, authenticated;
 grant insert on table public.callback_requests to anon, authenticated;
 
+grant select, insert, update on table public.products to authenticated;
 grant select, update on table public.orders to authenticated;
 grant select, update on table public.callback_requests to authenticated;
 grant select, update on table public.profiles to authenticated;
@@ -222,6 +257,14 @@ on public.products
 for select
 to anon, authenticated
 using (true);
+
+drop policy if exists "Admins can manage products" on public.products;
+create policy "Admins can manage products"
+on public.products
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
 
 drop policy if exists "Public can read gallery items" on public.gallery_items;
 create policy "Public can read gallery items"

@@ -1,11 +1,10 @@
-import { Product } from "@/types/store";
+import { Product, ProductOptionGroup, ProductRecord, PrintSizeOption } from "@/types/store";
 
 export const printSizes = [
   { label: "No print", price: 0 },
   { label: "A6 print", price: 20 },
   { label: "A5 print", price: 35 },
   { label: "A4 print", price: 55 },
-  { label: "A3 print", price: 80 },
 ];
 
 const polyesterTeeGallery = [
@@ -47,7 +46,7 @@ const stoneSlabGallery = [
   "/store-products/decor_photo_stone_slab(4).png",
 ];
 
-export const categories = [
+const categoryOrder = [
   "Clothing",
   "Caps",
   "Accessories",
@@ -74,13 +73,13 @@ const baseProducts: Omit<Product, "storeSection">[] = [
   {
     id: "adult-essential-tee",
     slug: "adult-essential-tee",
-    name: "Essential Adult Tee",
+    name: "Unisex Essential T-Shirt",
     category: "Clothing",
     basePrice: 180,
     featured: true,
     description:
-      "High-quality cotton T-shirt for custom prints, gifting, and event wear.",
-    summary: "Cotton tee with long or short sleeve options for men and women.",
+      "High-quality unisex cotton T-shirt for custom prints, gifting, and event wear.",
+    summary: "Classic unisex cotton tee for everyday gifting, events, and branding.",
     leadTime: "2-4 business days",
     badges: ["Best Seller", "Custom Print Ready"],
     image: polyesterTeeGallery[0],
@@ -88,7 +87,6 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     supportsGiftWrap: true,
     printSizes,
     variantOptions: [
-      { label: "Fit", values: ["Men", "Women"] },
       { label: "Size", values: ["XS", "S", "M", "L", "XL", "2XL", "3XL"] },
       {
         label: "Colour",
@@ -345,7 +343,7 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     slug: "ceramic-coffee-mug",
     name: "Ceramic Coffee Mug",
     category: "Drinkware",
-    basePrice: 50,
+    basePrice: 60,
     description: "Classic ceramic mug for affordable gifting, branding, and memorial designs.",
     summary: "Everyday custom mug with strong value pricing.",
     leadTime: "2-4 business days",
@@ -392,16 +390,210 @@ const baseProducts: Omit<Product, "storeSection">[] = [
   },
 ];
 
-export const products: Product[] = baseProducts.map((product) => ({
+export const defaultProducts: Product[] = baseProducts.map((product) => ({
   ...product,
   storeSection: readyMadeProductSlugs.has(product.slug) ? "ready-made" : "personalized",
 }));
 
-export const featuredProducts = products.filter((product) => product.featured);
+export const products = defaultProducts;
 
-export const personalizedProducts = products.filter((product) => product.storeSection === "personalized");
+export const categories = getCategories(defaultProducts);
 
-export const readyMadeProducts = products.filter((product) => product.storeSection === "ready-made");
+export const featuredProducts = defaultProducts.filter((product) => product.featured);
+
+export const personalizedProducts = defaultProducts.filter((product) => product.storeSection === "personalized");
+
+export const readyMadeProducts = defaultProducts.filter((product) => product.storeSection === "ready-made");
 
 export const getProductBySlug = (slug: string) =>
-  products.find((product) => product.slug === slug);
+  defaultProducts.find((product) => product.slug === slug);
+
+function normalizeStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => String(entry).trim())
+    .filter(Boolean);
+}
+
+function normalizeVariantOptions(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const option = entry as { label?: unknown; values?: unknown };
+      const label = typeof option.label === "string" ? option.label.trim() : "";
+      const values = Array.isArray(option.values)
+        ? option.values.map((item) => String(item).trim()).filter(Boolean)
+        : [];
+
+      if (!label || !values.length) {
+        return null;
+      }
+
+      return {
+        label,
+        values,
+      } satisfies ProductOptionGroup;
+    })
+    .filter((entry): entry is ProductOptionGroup => Boolean(entry));
+}
+
+function normalizePrintSizes(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return null;
+      }
+
+      const option = entry as { label?: unknown; price?: unknown };
+      const label = typeof option.label === "string" ? option.label.trim() : "";
+      const price = Number(option.price);
+
+      if (!label || Number.isNaN(price)) {
+        return null;
+      }
+
+      return {
+        label,
+        price,
+      } satisfies PrintSizeOption;
+    })
+    .filter((entry): entry is PrintSizeOption => Boolean(entry));
+}
+
+function getFallbackStoreSection(slug: string) {
+  return readyMadeProductSlugs.has(slug) ? "ready-made" : "personalized";
+}
+
+function createProductFromRecord(record: ProductRecord): Product {
+  const galleryImages = normalizeStringArray(record.gallery_images);
+  const image = typeof record.image_url === "string" && record.image_url.trim() ? record.image_url.trim() : undefined;
+
+  return {
+    id: record.id,
+    slug: record.slug,
+    name: record.name,
+    category: record.category,
+    storeSection: record.store_section ?? getFallbackStoreSection(record.slug),
+    basePrice: Number(record.base_price),
+    description: record.description,
+    summary: record.summary,
+    leadTime: record.lead_time,
+    featured: record.featured,
+    badges: normalizeStringArray(record.badges),
+    image,
+    galleryImages: galleryImages.length ? galleryImages : image ? [image] : undefined,
+    variantOptions: normalizeVariantOptions(record.variant_options),
+    printSizes: normalizePrintSizes(record.print_sizes),
+    supportsCustomVinyl: record.supports_custom_vinyl,
+    supportsGiftWrap: record.supports_gift_wrap,
+  };
+}
+
+function mergeProductWithRecord(product: Product, record: ProductRecord): Product {
+  const galleryImages = record.gallery_images === null || record.gallery_images === undefined
+    ? product.galleryImages
+    : normalizeStringArray(record.gallery_images);
+  const variantOptions = record.variant_options === null || record.variant_options === undefined
+    ? product.variantOptions
+    : normalizeVariantOptions(record.variant_options);
+  const resolvedPrintSizes = record.print_sizes === null || record.print_sizes === undefined
+    ? product.printSizes
+    : normalizePrintSizes(record.print_sizes);
+  const badges = record.badges === null || record.badges === undefined
+    ? product.badges
+    : normalizeStringArray(record.badges);
+  const image = record.image_url === null || record.image_url === undefined || record.image_url.trim() === ""
+    ? product.image
+    : record.image_url.trim();
+
+  return {
+    ...product,
+    id: record.id,
+    slug: record.slug,
+    name: record.name,
+    category: record.category,
+    storeSection: record.store_section ?? product.storeSection,
+    basePrice: Number(record.base_price),
+    description: record.description,
+    summary: record.summary,
+    leadTime: record.lead_time,
+    featured: record.featured,
+    badges,
+    image,
+    galleryImages,
+    variantOptions,
+    printSizes: resolvedPrintSizes,
+    supportsCustomVinyl: record.supports_custom_vinyl,
+    supportsGiftWrap: record.supports_gift_wrap,
+  };
+}
+
+export function mergeStoreProducts(records: ProductRecord[] = []) {
+  const recordsBySlug = new Map(records.map((record) => [record.slug, record]));
+  const mergedProducts: Product[] = [];
+
+  for (const product of defaultProducts) {
+    const record = recordsBySlug.get(product.slug);
+
+    if (!record) {
+      mergedProducts.push(product);
+      continue;
+    }
+
+    recordsBySlug.delete(product.slug);
+
+    if (record.active === false) {
+      continue;
+    }
+
+    mergedProducts.push(mergeProductWithRecord(product, record));
+  }
+
+  for (const record of recordsBySlug.values()) {
+    if (record.active === false) {
+      continue;
+    }
+
+    mergedProducts.push(createProductFromRecord(record));
+  }
+
+  return mergedProducts;
+}
+
+export function getCategories(items: Product[]) {
+  const orderedCategories = categoryOrder.filter((category) =>
+    items.some((product) => product.category === category),
+  );
+  const extraCategories = Array.from(
+    new Set(
+      items
+        .map((product) => product.category)
+        .filter((category) => !categoryOrder.includes(category)),
+    ),
+  );
+
+  return [...orderedCategories, ...extraCategories];
+}
+
+export function buildStoreCollections(items: Product[]) {
+  return {
+    categories: getCategories(items),
+    featuredProducts: items.filter((product) => product.featured),
+    personalizedProducts: items.filter((product) => product.storeSection === "personalized"),
+    readyMadeProducts: items.filter((product) => product.storeSection === "ready-made"),
+  };
+}

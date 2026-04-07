@@ -63,6 +63,13 @@ export function ProductCustomizer({ product }: { product: Product }) {
       return;
     }
 
+    const selectedSize = selectedOptions.Size;
+    const selectedColor = selectedOptions.Colour;
+    const selectedVariant = Object.entries(selectedOptions)
+      .filter(([label]) => label !== "Size" && label !== "Colour")
+      .map(([label, value]) => `${label}: ${value}`)
+      .join(" | ");
+
     const cartId = `${product.id}-${JSON.stringify(selectedOptions)}-${printSize}-${giftWrap}-${vinylWidth}-${vinylHeight}-${giftNote}-${customizationNotes}-${referenceFiles.map((file) => file.path || file.name).join(",")}`;
     addItem({
       cartId,
@@ -74,15 +81,9 @@ export function ProductCustomizer({ product }: { product: Product }) {
       basePrice: product.basePrice,
       totalPrice: lineTotal,
       quantity,
-      size: selectedOptions.Size,
-      color: selectedOptions.Colour,
-      variant:
-        selectedOptions.Fit ||
-        selectedOptions.Style ||
-        selectedOptions.Type ||
-        selectedOptions.Finish ||
-        selectedOptions.Quantity ||
-        selectedOptions.Sides,
+      size: selectedSize,
+      color: selectedColor,
+      variant: selectedVariant || undefined,
       printSize: selectedPrint?.label,
       customVinyl: product.supportsCustomVinyl
         ? { widthCm: vinylWidth, heightCm: vinylHeight, price: vinylPrice }

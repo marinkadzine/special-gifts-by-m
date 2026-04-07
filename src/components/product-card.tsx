@@ -71,7 +71,7 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
           Lead time: {product.leadTime}
         </p>
-        <Link href={`/shop/${product.slug}`} className="button-secondary px-4 py-2 text-sm">
+        <Link href={`/shop?slug=${encodeURIComponent(product.slug)}`} className="button-secondary px-4 py-2 text-sm">
           {product.storeSection === "personalized" ? "Customize" : "View Item"}
         </Link>
       </div>

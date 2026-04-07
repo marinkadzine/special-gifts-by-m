@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { useWishlist } from "@/components/wishlist-provider";
-import { products } from "@/data/catalog";
 
 export function WishlistPanel() {
   const { items } = useWishlist();
+  const { products } = useStoreProducts();
   const wishlistProducts = products.filter((product) => items.includes(product.slug));
 
   return (

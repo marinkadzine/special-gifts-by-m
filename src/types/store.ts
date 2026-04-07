@@ -30,6 +30,28 @@ export type Product = {
   supportsGiftWrap?: boolean;
 };
 
+export type ProductRecord = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  store_section?: StoreSection | null;
+  base_price: number;
+  description: string;
+  summary: string;
+  lead_time: string;
+  featured: boolean;
+  supports_gift_wrap: boolean;
+  supports_custom_vinyl: boolean;
+  variant_options?: ProductOptionGroup[] | null;
+  print_sizes?: PrintSizeOption[] | null;
+  badges?: string[] | null;
+  image_url?: string | null;
+  gallery_images?: string[] | null;
+  active?: boolean | null;
+  created_at?: string;
+};
+
 export type UploadedReference = {
   id: string;
   name: string;
