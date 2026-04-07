@@ -51,7 +51,7 @@ jobs:
         working-directory: android
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: special-gifts-by-m-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
