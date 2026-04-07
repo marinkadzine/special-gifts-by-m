@@ -2,6 +2,7 @@ import {
   BUSINESS_CONTACT,
   DEVELOPER_CREDIT,
   EFT_DETAILS,
+  PAYFAST_ENABLED,
   PAYFAST_STATUS_NOTE,
   PICKUP_DETAILS,
   SOCIAL_LINKS,
@@ -50,7 +51,9 @@ export function SiteFooter() {
           </p>
           <p className="text-sm text-[var(--berry)]">SWIFT/BIC: {EFT_DETAILS.swift}</p>
           <p className="text-sm text-[var(--berry)]">Branch code: {EFT_DETAILS.branchCode}</p>
-          <p className="mt-3 text-sm text-[var(--berry)]">{PAYFAST_STATUS_NOTE}</p>
+          <p className="mt-3 text-sm text-[var(--berry)]">
+            {PAYFAST_ENABLED ? "PayFast is available at checkout." : PAYFAST_STATUS_NOTE}
+          </p>
         </div>
         <div>
           <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">

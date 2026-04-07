@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-provider";
 import {
   BUSINESS_CONTACT,
   EFT_DETAILS,
+  PAYFAST_ENABLED,
   PAYFAST_STATUS_NOTE,
   PICKUP_DETAILS,
 } from "@/lib/business-details";
@@ -29,11 +30,15 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; note: string }[] =
     label: "EFT",
     note: `${EFT_DETAILS.bank} | Acc ${EFT_DETAILS.accountNumber}`,
   },
-  {
-    value: "payfast",
-    label: "PayFast",
-    note: PAYFAST_STATUS_NOTE,
-  },
+  ...(PAYFAST_ENABLED
+    ? [
+        {
+          value: "payfast" as PaymentMethod,
+          label: "PayFast",
+          note: PAYFAST_STATUS_NOTE,
+        },
+      ]
+    : []),
 ];
 
 export function CheckoutForm() {
@@ -305,6 +310,11 @@ export function CheckoutForm() {
           <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
             Payment method
           </p>
+          {!PAYFAST_ENABLED ? (
+            <div className="mb-3 rounded-[1.5rem] bg-white/80 p-4 text-sm leading-7 text-[var(--berry)]">
+              {PAYFAST_STATUS_NOTE}
+            </div>
+          ) : null}
           <div className="grid gap-3">
             {PAYMENT_OPTIONS.map((option) => {
               const active = paymentMethod === option.value;

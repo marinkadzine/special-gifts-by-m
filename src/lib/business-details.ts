@@ -33,12 +33,14 @@ export const EFT_DETAILS = {
 
 export const PICKUP_DETAILS = {
   label: "Pick Up from Special Gifts by M",
-  address: "Store collection address to be confirmed with the client before collection.",
-  note: "The business brief asks for store collection. Replace this note with the final street address as soon as it is confirmed.",
+  address: "55 Unie Street, Sasolburg, 1947.",
+  note: "Collection arrangements can still be confirmed with the client after the order is placed.",
 };
 
+export const PAYFAST_ENABLED = false;
+
 export const PAYFAST_STATUS_NOTE =
-  "PayFast is listed as a payment option, but live merchant approval is still pending.";
+  "PayFast approval is complete, but the secure payment integration is being added after launch.";
 
 export const SCAN_TO_PAY_STATUS_NOTE =
   "Scan to Pay is listed so clients can choose it, and the QR image can be added as soon as it is available.";
