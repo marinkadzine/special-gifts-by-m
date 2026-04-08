@@ -37,10 +37,10 @@ export const PICKUP_DETAILS = {
   note: "Collection arrangements can still be confirmed with the client after the order is placed.",
 };
 
-export const PAYFAST_ENABLED = false;
+export const PAYFAST_ENABLED = true;
 
 export const PAYFAST_STATUS_NOTE =
-  "PayFast approval is complete, but the secure payment integration is being added after launch.";
+  "Sandbox mode is active so PayFast can be tested safely before the live launch.";
 
 export const SCAN_TO_PAY_STATUS_NOTE =
   "Scan to Pay is listed so clients can choose it, and the QR image can be added as soon as it is available.";

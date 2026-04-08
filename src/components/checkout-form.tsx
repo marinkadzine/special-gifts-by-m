@@ -22,6 +22,7 @@ import {
 import { getItemsMissingCustomization, serializeOrderItems } from "@/lib/order-items";
 import { PudoLockerMapHelper } from "@/components/pudo-locker-map-helper";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { initiatePayfastCheckout, submitPayfastForm } from "@/lib/payfast";
 import { CheckoutInput, DeliveryMethod, PaymentMethod } from "@/types/store";
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; note: string }[] = [
@@ -132,9 +133,20 @@ export function CheckoutForm() {
     };
 
     setSubmitting(true);
-    setStatus("Saving your order...");
+    setStatus(paymentMethod === "payfast" ? "Preparing PayFast checkout..." : "Saving your order...");
 
     try {
+      if (paymentMethod === "payfast") {
+        if (!payload.email) {
+          throw new Error("Email is required for PayFast sandbox checkout.");
+        }
+
+        const payfastCheckout = await initiatePayfastCheckout(payload);
+        setStatus(`Redirecting you to PayFast sandbox for order ${payfastCheckout.orderNumber}...`);
+        submitPayfastForm(payfastCheckout.paymentUrl, payfastCheckout.fields);
+        return;
+      }
+
       const orderId = `SGM-${Date.now()}`;
       const supabase = getBrowserSupabaseClient();
 
@@ -386,7 +398,7 @@ export function CheckoutForm() {
         </div>
 
         <button disabled={submitting} className="button-primary w-full" type="submit">
-          {submitting ? "Submitting order..." : "Place order"}
+          {submitting ? "Submitting order..." : paymentMethod === "payfast" ? "Continue to PayFast" : "Place order"}
         </button>
 
         {status ? <p className="text-sm text-[var(--mauve)]">{status}</p> : null}

@@ -107,6 +107,12 @@ alter table public.orders
   add column if not exists pudo_size text;
 
 alter table public.orders
+  add column if not exists payment_reference text;
+
+alter table public.orders
+  add column if not exists payment_confirmed_at timestamptz;
+
+alter table public.orders
   drop constraint if exists orders_delivery_method_check;
 
 alter table public.orders

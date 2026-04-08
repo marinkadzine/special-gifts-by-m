@@ -7,7 +7,17 @@ import { formatCurrency } from "@/lib/pricing";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { CallbackRequest, GalleryItem, OrderRecord, Profile } from "@/types/store";
 
-const ORDER_STATUSES = ["pending", "paid", "processing", "ready", "shipped", "completed"] as const;
+const ORDER_STATUSES = [
+  "pending",
+  "pending_payment",
+  "paid",
+  "processing",
+  "ready",
+  "shipped",
+  "completed",
+  "cancelled",
+  "failed",
+] as const;
 const CALLBACK_STATUSES = ["new", "contacted", "closed"] as const;
 
 type GalleryFormState = {
