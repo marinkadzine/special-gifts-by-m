@@ -232,8 +232,8 @@ grant insert on table public.orders to anon, authenticated;
 grant insert on table public.callback_requests to anon, authenticated;
 
 grant select, insert, update on table public.products to authenticated;
-grant select, update on table public.orders to authenticated;
-grant select, update on table public.callback_requests to authenticated;
+grant select, update, delete on table public.orders to authenticated;
+grant select, update, delete on table public.callback_requests to authenticated;
 grant select, update on table public.profiles to authenticated;
 grant select, insert, update on table public.gallery_items to authenticated;
 
@@ -318,6 +318,13 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "Admins can delete orders" on public.orders;
+create policy "Admins can delete orders"
+on public.orders
+for delete
+to authenticated
+using (public.is_admin());
+
 drop policy if exists "Public can create callback requests" on public.callback_requests;
 create policy "Public can create callback requests"
 on public.callback_requests
@@ -339,3 +346,10 @@ for update
 to authenticated
 using (public.is_admin())
 with check (public.is_admin());
+
+drop policy if exists "Admins can delete callback requests" on public.callback_requests;
+create policy "Admins can delete callback requests"
+on public.callback_requests
+for delete
+to authenticated
+using (public.is_admin());

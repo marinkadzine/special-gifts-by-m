@@ -10,7 +10,7 @@ import { useWishlist } from "@/components/wishlist-provider";
 export function SiteHeader() {
   const { items } = useCart();
   const { items: wishlistItems } = useWishlist();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, signOut, user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [storeOpen, setStoreOpen] = useState(false);
   const count = items.reduce((total, item) => total + item.quantity, 0);
@@ -27,6 +27,11 @@ export function SiteHeader() {
     { href: "/contact", label: "Contact Us" },
     ...storeLinks,
   ];
+
+  async function handleSignOut() {
+    await signOut();
+    setMenuOpen(false);
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/30 bg-white/70 backdrop-blur-xl">
@@ -131,6 +136,13 @@ export function SiteHeader() {
                           {link.label}
                         </Link>
                       ))}
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="block w-full rounded-[1rem] px-4 py-3 text-left text-sm font-bold text-[var(--rose-deep)] transition hover:bg-[var(--soft-rose)]"
+                      >
+                        Log Out
+                      </button>
                     </nav>
                   </div>
                 ) : null}

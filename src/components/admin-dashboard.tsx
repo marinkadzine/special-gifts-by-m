@@ -74,6 +74,48 @@ export function AdminDashboard() {
     setStatus("Order status updated.");
   }
 
+  async function deleteOrder(orderId: string) {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so orders cannot be removed.");
+      return;
+    }
+
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setOrders((current) => current.filter((order) => order.id !== orderId));
+    setStatus("Order removed.");
+  }
+
+  async function clearOrders() {
+    if (!orders.length || !window.confirm("Remove all current orders from the dashboard?")) {
+      return;
+    }
+
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so orders cannot be removed.");
+      return;
+    }
+
+    const { error } = await supabase.from("orders").delete().neq("id", "");
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setOrders([]);
+    setStatus("All current orders removed.");
+  }
+
   async function updateCallbackStatus(requestId: string, nextStatus: string) {
     const supabase = getBrowserSupabaseClient();
 
@@ -105,6 +147,48 @@ export function AdminDashboard() {
       current.map((request) => (request.id === requestId ? ((data as CallbackRequest) ?? request) : request)),
     );
     setStatus("Callback request updated.");
+  }
+
+  async function deleteCallback(requestId: string) {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so callback requests cannot be removed.");
+      return;
+    }
+
+    const { error } = await supabase.from("callback_requests").delete().eq("id", requestId);
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setCallbacks((current) => current.filter((request) => request.id !== requestId));
+    setStatus("Callback request removed.");
+  }
+
+  async function clearCallbacks() {
+    if (!callbacks.length || !window.confirm("Remove all current callback requests from the dashboard?")) {
+      return;
+    }
+
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so callback requests cannot be removed.");
+      return;
+    }
+
+    const { error } = await supabase.from("callback_requests").delete().neq("id", "");
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setCallbacks([]);
+    setStatus("All current callback requests removed.");
   }
 
   async function handleGallerySubmit(event: FormEvent<HTMLFormElement>) {
@@ -181,13 +265,7 @@ export function AdminDashboard() {
     <section className="space-y-8">
       <div className="glass rounded-[2rem] p-6 md:p-8">
         <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">Admin workspace</p>
-        <h2 className="mt-2 font-display text-4xl text-[var(--berry)] md:text-5xl">
-          Orders, callbacks, accounts, and gallery updates
-        </h2>
-        <p className="mt-3 max-w-3xl text-base leading-8 text-[var(--mauve)]">
-          This dashboard is restricted to the approved admin email list from the business brief.
-          Orders, callbacks, gallery updates, and store item changes all happen here.
-        </p>
+        <h2 className="mt-2 font-display text-4xl text-[var(--berry)] md:text-5xl">Admin dashboard</h2>
         {status ? <p className="mt-4 text-sm text-[var(--mauve)]">{status}</p> : null}
       </div>
 
@@ -195,9 +273,11 @@ export function AdminDashboard() {
         <section className="glass rounded-[2rem] p-6">
           <div className="flex items-center justify-between gap-4">
             <h3 className="font-display text-3xl text-[var(--berry)]">Orders</h3>
-            <span className="rounded-full bg-[var(--blush)] px-4 py-2 text-sm font-bold text-[var(--rose-deep)]">
-              {orders.length} total
-            </span>
+            {orders.length ? (
+              <button type="button" className="button-secondary px-4 py-2 text-sm" onClick={clearOrders}>
+                Clear all
+              </button>
+            ) : null}
           </div>
           <div className="mt-5 space-y-4">
             {orders.map((order) => (
@@ -226,6 +306,13 @@ export function AdminDashboard() {
                         </option>
                       ))}
                     </select>
+                    <button
+                      type="button"
+                      className="button-secondary mt-2 w-full px-4 py-2 text-sm"
+                      onClick={() => deleteOrder(order.id)}
+                    >
+                      Delete order
+                    </button>
                   </div>
                 </div>
                 {order.notes ? <p className="mt-3 text-sm text-[var(--mauve)]">Notes: {order.notes}</p> : null}
@@ -239,9 +326,6 @@ export function AdminDashboard() {
                         {order.items.length} item{order.items.length === 1 ? "" : "s"}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
-                      Open each item below to see the customer instructions and any uploaded logos, photos, or reference files.
-                    </p>
                     <div className="mt-4 space-y-3">
                     {order.items.map((item) => (
                       <div key={item.cartId} className="rounded-[1rem] bg-white px-4 py-4">
@@ -307,7 +391,14 @@ export function AdminDashboard() {
 
         <div className="space-y-6">
           <section className="glass rounded-[2rem] p-6">
-            <h3 className="font-display text-3xl text-[var(--berry)]">Call back requests</h3>
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="font-display text-3xl text-[var(--berry)]">Call back requests</h3>
+              {callbacks.length ? (
+                <button type="button" className="button-secondary px-4 py-2 text-sm" onClick={clearCallbacks}>
+                  Clear all
+                </button>
+              ) : null}
+            </div>
             <div className="mt-5 space-y-3">
               {callbacks.length ? (
                 callbacks.map((request) => (
@@ -348,6 +439,13 @@ export function AdminDashboard() {
                       ) : (
                         <p className="text-sm font-bold text-[var(--mauve)]">Already marked as contacted.</p>
                       )}
+                      <button
+                        type="button"
+                        className="button-secondary px-4 py-2 text-sm"
+                        onClick={() => deleteCallback(request.id)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))

@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/pricing";
@@ -206,6 +207,7 @@ export function AdminProductsManager() {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [hiddenProducts, setHiddenProducts] = useState<ProductRecord[]>([]);
+  const formSectionRef = useRef<HTMLElement | null>(null);
 
   const sortedProducts = [...products].sort((left, right) =>
     left.category === right.category
@@ -247,22 +249,32 @@ export function AdminProductsManager() {
     setFormState((current) => ({ ...current, [key]: value }));
   }
 
+  function focusEditor() {
+    formSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
   function startNewProduct() {
     setEditingSlug("");
     setFormState(EMPTY_PRODUCT_FORM);
     setStatus("Ready to add a new store item.");
+    focusEditor();
   }
 
   function editProduct(product: Product) {
     setEditingSlug(product.slug);
     setFormState(createFormState(product));
     setStatus(`Editing ${product.name}.`);
+    focusEditor();
   }
 
   function editHiddenProduct(product: ProductRecord) {
     setEditingSlug(product.slug);
     setFormState(createFormStateFromRecord(product));
     setStatus(`Editing hidden item ${product.name}.`);
+    focusEditor();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -341,7 +353,7 @@ export function AdminProductsManager() {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-      <section className="glass rounded-[2rem] p-6">
+      <section ref={formSectionRef} className="glass rounded-[2rem] p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">Store management</p>
@@ -351,9 +363,13 @@ export function AdminProductsManager() {
             Add new item
           </button>
         </div>
-        <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">
-          Use this form to change product pricing, update item details, hide products, or add brand-new store items.
-        </p>
+        {editingSlug ? (
+          <div className="mt-4 rounded-[1.2rem] border border-[var(--line)] bg-white/75 px-4 py-3">
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--mauve)]">Now editing</p>
+            <p className="mt-2 font-bold text-[var(--berry)]">{formState.name || editingSlug}</p>
+            <p className="text-sm text-[var(--mauve)]">{editingSlug}</p>
+          </div>
+        ) : null}
         {status ? <p className="mt-4 text-sm text-[var(--mauve)]">{status}</p> : null}
 
         <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
@@ -551,16 +567,18 @@ export function AdminProductsManager() {
             {products.length} items
           </span>
         </div>
-        <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">
-          Select any item below to edit its pricing, labels, image links, print sizes, or visibility.
-        </p>
         <div className="mt-5 space-y-3">
           {loading ? (
             <p className="text-sm text-[var(--mauve)]">Loading store items...</p>
           ) : (
             <>
               {sortedProducts.map((product) => (
-                <article key={product.slug} className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 p-4">
+                <article
+                  key={product.slug}
+                  className={`rounded-[1.2rem] border bg-white/80 p-4 ${
+                    editingSlug === product.slug ? "border-[var(--rose)] shadow-sm" : "border-[var(--line)]"
+                  }`}
+                >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <p className="font-bold text-[var(--berry)]">{product.name}</p>
@@ -571,13 +589,21 @@ export function AdminProductsManager() {
                     </div>
                     <div className="text-left md:text-right">
                       <p className="font-bold text-[var(--berry)]">{formatCurrency(product.basePrice)}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 md:justify-end">
                       <button
                         type="button"
-                        className="button-secondary mt-3 px-4 py-2 text-sm"
+                        className="button-secondary px-4 py-2 text-sm"
                         onClick={() => editProduct(product)}
                       >
                         Edit item
                       </button>
+                      <Link
+                        href={`/shop?slug=${encodeURIComponent(product.slug)}`}
+                        className="button-secondary px-4 py-2 text-sm"
+                      >
+                        Open item
+                      </Link>
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -589,7 +615,12 @@ export function AdminProductsManager() {
                   </p>
                   <div className="mt-3 space-y-3">
                     {hiddenProducts.map((product) => (
-                      <article key={product.slug} className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 p-4">
+                      <article
+                        key={product.slug}
+                        className={`rounded-[1.2rem] border bg-white/80 p-4 ${
+                          editingSlug === product.slug ? "border-[var(--rose)] shadow-sm" : "border-[var(--line)]"
+                        }`}
+                      >
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div>
                             <p className="font-bold text-[var(--berry)]">{product.name}</p>
