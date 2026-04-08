@@ -1,10 +1,29 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { GalleryItem } from "@/types/store";
 
-export function GallerySection() {
+type GallerySectionProps = {
+  limit?: number;
+  sectionId?: string;
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  emptyMessage?: string;
+  showViewAllLink?: boolean;
+};
+
+export function GallerySection({
+  limit = 6,
+  sectionId = "gallery",
+  eyebrow = "Gallery",
+  heading = "Recent gifting and branding inspiration",
+  description,
+  emptyMessage = "Gallery items will appear here as soon as the admin team adds them.",
+  showViewAllLink = false,
+}: GallerySectionProps) {
   const [items, setItems] = useState<GalleryItem[]>([]);
 
   useEffect(() => {
@@ -15,26 +34,39 @@ export function GallerySection() {
         return;
       }
 
-      const { data } = await supabase
+      let query = supabase
         .from("gallery_items")
         .select("id, title, category, image_url, caption, featured, created_at")
         .order("featured", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(6);
+        .order("created_at", { ascending: false });
+
+      if (typeof limit === "number") {
+        query = query.limit(limit);
+      }
+
+      const { data } = await query;
 
       setItems((data as GalleryItem[] | null) ?? []);
     }
 
     loadGallery();
-  }, []);
+  }, [limit]);
 
   return (
-    <section id="gallery" className="shell">
+    <section id={sectionId} className="shell">
       <div className="mb-8">
-        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">Gallery</p>
-        <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
-          Recent gifting and branding inspiration
-        </h2>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">{eyebrow}</p>
+            <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">{heading}</h2>
+            {description ? <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--mauve)]">{description}</p> : null}
+          </div>
+          {showViewAllLink ? (
+            <Link href="/gallery" className="button-secondary w-fit px-5 py-3 text-sm">
+              View full gallery
+            </Link>
+          ) : null}
+        </div>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {items.length ? (
@@ -51,7 +83,7 @@ export function GallerySection() {
           ))
         ) : (
           <div className="glass rounded-[2rem] p-6 text-sm leading-7 text-[var(--mauve)]">
-            Gallery items will appear here as soon as the admin team adds them.
+            {emptyMessage}
           </div>
         )}
       </div>

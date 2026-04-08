@@ -108,7 +108,7 @@ export function StorefrontHome() {
           ))}
         </section>
 
-        <GallerySection />
+        <GallerySection showViewAllLink />
 
         <section className="shell">
           <CallbackRequestForm />

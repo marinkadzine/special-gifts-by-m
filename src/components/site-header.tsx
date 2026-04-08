@@ -20,11 +20,13 @@ export function SiteHeader() {
     { href: "/#store-personalized", label: "Personalized Items" },
     { href: "/#store-ready-made", label: "Ready-Made Items" },
   ];
+  const galleryLink = { href: "/gallery", label: "Gallery" };
 
   const menuLinks = [
     { href: "/about", label: "About Us" },
     { href: isAdmin ? "/admin" : "/account", label: isAdmin ? "Admin Profile" : "My Profile" },
     { href: "/contact", label: "Contact Us" },
+    galleryLink,
     ...storeLinks,
   ];
 
@@ -78,7 +80,7 @@ export function SiteHeader() {
                     className="absolute right-0 top-[calc(100%+0.75rem)] w-72 rounded-[1.8rem] border border-white/40 bg-white/92 p-4 shadow-[var(--shadow)]"
                   >
                     <nav className="space-y-2">
-                      {storeLinks.map((link) => (
+                      {[...storeLinks, galleryLink].map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}

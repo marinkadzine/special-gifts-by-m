@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/pricing";
@@ -202,6 +203,9 @@ function humanizeSaveError(message: string) {
 
 export function AdminProductsManager() {
   const { loading, products, refresh } = useStoreProducts();
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [formState, setFormState] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
   const [editingSlug, setEditingSlug] = useState("");
   const [status, setStatus] = useState("");
@@ -214,6 +218,20 @@ export function AdminProductsManager() {
       ? left.name.localeCompare(right.name)
       : left.category.localeCompare(right.category),
   );
+
+  function syncEditorLocation(slug?: string) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    if (slug) {
+      nextParams.set("edit", slug);
+    } else {
+      nextParams.delete("edit");
+    }
+
+    const query = nextParams.toString();
+    const nextUrl = query ? `${pathname}?${query}#store-item-editor` : `${pathname}#store-item-editor`;
+    router.replace(nextUrl, { scroll: false });
+  }
 
   useEffect(() => {
     let active = true;
@@ -245,6 +263,33 @@ export function AdminProductsManager() {
     };
   }, []);
 
+  useEffect(() => {
+    const requestedSlug = searchParams.get("edit");
+
+    if (!requestedSlug) {
+      return;
+    }
+
+    const product = sortedProducts.find((entry) => entry.slug === requestedSlug);
+
+    if (product && editingSlug !== requestedSlug) {
+      setEditingSlug(product.slug);
+      setFormState(createFormState(product));
+      setStatus(`Editing ${product.name}.`);
+      focusEditor();
+      return;
+    }
+
+    const hiddenProduct = hiddenProducts.find((entry) => entry.slug === requestedSlug);
+
+    if (hiddenProduct && editingSlug !== requestedSlug) {
+      setEditingSlug(hiddenProduct.slug);
+      setFormState(createFormStateFromRecord(hiddenProduct));
+      setStatus(`Editing hidden item ${hiddenProduct.name}.`);
+      focusEditor();
+    }
+  }, [editingSlug, hiddenProducts, searchParams, sortedProducts]);
+
   function updateField<Key extends keyof ProductFormState>(key: Key, value: ProductFormState[Key]) {
     setFormState((current) => ({ ...current, [key]: value }));
   }
@@ -260,6 +305,7 @@ export function AdminProductsManager() {
     setEditingSlug("");
     setFormState(EMPTY_PRODUCT_FORM);
     setStatus("Ready to add a new store item.");
+    syncEditorLocation();
     focusEditor();
   }
 
@@ -267,6 +313,7 @@ export function AdminProductsManager() {
     setEditingSlug(product.slug);
     setFormState(createFormState(product));
     setStatus(`Editing ${product.name}.`);
+    syncEditorLocation(product.slug);
     focusEditor();
   }
 
@@ -274,6 +321,7 @@ export function AdminProductsManager() {
     setEditingSlug(product.slug);
     setFormState(createFormStateFromRecord(product));
     setStatus(`Editing hidden item ${product.name}.`);
+    syncEditorLocation(product.slug);
     focusEditor();
   }
 
@@ -353,7 +401,7 @@ export function AdminProductsManager() {
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-      <section ref={formSectionRef} className="glass rounded-[2rem] p-6">
+      <section id="store-item-editor" ref={formSectionRef} className="glass rounded-[2rem] p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">Store management</p>
@@ -590,13 +638,13 @@ export function AdminProductsManager() {
                     <div className="text-left md:text-right">
                       <p className="font-bold text-[var(--berry)]">{formatCurrency(product.basePrice)}</p>
                       <div className="mt-3 flex flex-wrap gap-2 md:justify-end">
-                      <button
-                        type="button"
+                      <Link
+                        href={`/admin?edit=${encodeURIComponent(product.slug)}#store-item-editor`}
                         className="button-secondary px-4 py-2 text-sm"
                         onClick={() => editProduct(product)}
                       >
-                        Edit item
-                      </button>
+                        Open editor
+                      </Link>
                       <Link
                         href={`/shop?slug=${encodeURIComponent(product.slug)}`}
                         className="button-secondary px-4 py-2 text-sm"
@@ -629,13 +677,13 @@ export function AdminProductsManager() {
                             </p>
                             <p className="mt-1 text-sm text-[var(--mauve)]">{product.slug}</p>
                           </div>
-                          <button
-                            type="button"
+                          <Link
+                            href={`/admin?edit=${encodeURIComponent(product.slug)}#store-item-editor`}
                             className="button-secondary px-4 py-2 text-sm"
                             onClick={() => editHiddenProduct(product)}
                           >
-                            Edit / restore
-                          </button>
+                            Open editor
+                          </Link>
                         </div>
                       </article>
                     ))}

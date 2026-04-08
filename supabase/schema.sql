@@ -235,7 +235,7 @@ grant select, insert, update on table public.products to authenticated;
 grant select, update, delete on table public.orders to authenticated;
 grant select, update, delete on table public.callback_requests to authenticated;
 grant select, update on table public.profiles to authenticated;
-grant select, insert, update on table public.gallery_items to authenticated;
+grant select, insert, update, delete on table public.gallery_items to authenticated;
 
 drop policy if exists "Public can upload order assets" on storage.objects;
 create policy "Public can upload order assets"
