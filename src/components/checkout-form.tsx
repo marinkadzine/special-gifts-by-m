@@ -253,8 +253,8 @@ export function CheckoutForm() {
           <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">
             Delivery method
           </p>
-          <div className="grid gap-3 md:grid-cols-3">
-            {(["pudo", "courier", "collection"] as DeliveryMethod[]).map((option) => {
+          <div className="grid gap-3 md:grid-cols-2">
+            {(["pudo", "collection"] as DeliveryMethod[]).map((option) => {
               const active = option === deliveryMethod;
               const optionFee = getDeliveryFee(option, items);
 
@@ -298,16 +298,6 @@ export function CheckoutForm() {
               />
             </label>
           </div>
-        ) : null}
-
-        {deliveryMethod === "courier" ? (
-          <label className="block text-sm text-[var(--berry)]">
-            Delivery address
-            <textarea
-              name="address"
-              className="mt-2 min-h-28 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
-            />
-          </label>
         ) : null}
 
         {deliveryMethod === "collection" ? (
@@ -377,7 +367,7 @@ export function CheckoutForm() {
           <input type="checkbox" name="termsAccepted" className="mt-1" />
           <span>
             I understand that the typical lead time can be around 7 days, Special Gifts by M is not liable
-            for courier or delivery delays once an order has been handed over, and personalized orders can
+            for delivery delays once an order has been handed over, and personalized orders can
             only move ahead once artwork, payment, and delivery details are confirmed.
           </span>
         </label>

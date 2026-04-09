@@ -73,7 +73,7 @@ export function SpecialsSlider() {
             <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--berry)]">
               <li>Sign up, log in, save a wishlist, and place orders.</li>
               <li>Upload logos or photos before checkout.</li>
-              <li>Choose PUDO, courier, or collection at checkout.</li>
+              <li>Choose PUDO or collection at checkout.</li>
               <li>Use the callback form when help is needed.</li>
             </ul>
             <div className="mt-5 flex gap-2">

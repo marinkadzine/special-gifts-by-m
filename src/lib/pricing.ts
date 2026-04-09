@@ -10,7 +10,6 @@ export function formatCurrency(value: number) {
 
 export const GIFT_WRAP_FEE = 35;
 
-export const COURIER_FEE = 120;
 export const COLLECTION_FEE = 0;
 
 export const PUDO_LOCKER_OPTIONS: Record<
@@ -71,10 +70,6 @@ export function estimatePudoLockerSize(items: CartItem[]): PudoLockerSize {
 }
 
 export function getDeliveryFee(method: DeliveryMethod, items: CartItem[]) {
-  if (method === "courier") {
-    return COURIER_FEE;
-  }
-
   if (method === "collection") {
     return COLLECTION_FEE;
   }

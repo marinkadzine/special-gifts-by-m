@@ -87,7 +87,7 @@ export type CartItem = {
   referenceFiles?: UploadedReference[];
 };
 
-export type DeliveryMethod = "pudo" | "courier" | "collection";
+export type DeliveryMethod = "pudo" | "collection";
 export type PaymentMethod = "eft" | "payfast" | "scan_to_pay";
 export type PudoLockerSize = "XS" | "S" | "M" | "L" | "XL";
 

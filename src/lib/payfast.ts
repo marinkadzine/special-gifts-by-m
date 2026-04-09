@@ -21,21 +21,40 @@ export async function initiatePayfastCheckout(payload: CheckoutInput) {
   const supabase = getBrowserSupabaseClient();
   const sessionResult = supabase ? await supabase.auth.getSession() : null;
   const accessToken = sessionResult?.data.session?.access_token;
+  let response: Response;
 
-  const response = await fetch(getPayfastInitUrl(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    response = await fetch(getPayfastInitUrl(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error(
+      "PayFast sandbox could not be reached. In Supabase, deploy the payfast-init and payfast-itn Edge Functions, add the PAYFAST_* secrets and PUBLIC_SITE_URL, then redeploy Cloudflare Pages.",
+    );
+  }
 
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as PayfastInitResponse & { error?: string }) : null;
+  let data: (PayfastInitResponse & { error?: string }) | null = null;
 
-  if (!response.ok || !data) {
-    throw new Error(data?.error || "Could not start the PayFast checkout.");
+  if (text) {
+    try {
+      data = JSON.parse(text) as PayfastInitResponse & { error?: string };
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error || text || "Could not start the PayFast checkout.");
+  }
+
+  if (!data) {
+    throw new Error("PayFast sandbox returned an invalid response. Please redeploy the Supabase function and try again.");
   }
 
   return data;
