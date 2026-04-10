@@ -33,9 +33,6 @@ export function CartSummary() {
                       .filter(Boolean)
                       .join(" | ") || "Standard configuration"}
                   </p>
-                  {item.giftNote ? (
-                    <p className="mt-1 text-sm text-[var(--mauve)]">Gift note: {item.giftNote}</p>
-                  ) : null}
                   {item.customizationNotes ? (
                     <p className="mt-1 text-sm text-[var(--mauve)]">
                       Print instructions: {item.customizationNotes}
@@ -103,6 +100,9 @@ export function CartSummary() {
         <div>
           <p className="text-sm uppercase tracking-[0.24em] text-white/70">Subtotal</p>
           <p className="font-display text-4xl">{formatCurrency(subtotal)}</p>
+          <p className="mt-2 text-sm leading-7 text-white/80">
+            Gift wrapping and the final delivery split are chosen at checkout.
+          </p>
         </div>
         <Link href="/#catalogue" className="rounded-full bg-white px-5 py-3 text-sm font-extrabold text-[var(--berry)]">
           Add more items

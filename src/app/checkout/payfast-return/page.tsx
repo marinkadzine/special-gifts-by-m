@@ -18,12 +18,12 @@ export default function PayfastReturnPage() {
       <SiteHeader />
       <section className="shell py-8">
         <div className="glass rounded-[2rem] p-6 md:p-8">
-          <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">PayFast sandbox</p>
+          <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">PayFast</p>
           <h1 className="mt-2 font-display text-4xl text-[var(--berry)] md:text-5xl">
             Payment submitted for confirmation
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--mauve)]">
-            Your PayFast sandbox payment has been sent back to Special Gifts by M. The order will update
+            Your PayFast payment has been sent back to Special Gifts by M. The order will update
             automatically once PayFast confirms it through the secure notification step.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">

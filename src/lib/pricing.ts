@@ -1,4 +1,4 @@
-import { CartItem, DeliveryMethod, Product, PudoLockerSize } from "@/types/store";
+import { CartItem, DeliveryOption, Product, PudoLockerSize } from "@/types/store";
 
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-ZA", {
@@ -33,10 +33,9 @@ export function calculateVinylPrice(widthCm: number, heightCm: number) {
 export function calculateLineItemTotal(
   product: Product,
   printUpcharge = 0,
-  giftWrap = false,
   customVinylPrice = 0,
 ) {
-  return product.basePrice + printUpcharge + customVinylPrice + (giftWrap ? GIFT_WRAP_FEE : 0);
+  return product.basePrice + printUpcharge + customVinylPrice;
 }
 
 export function calculateCartSubtotal(items: CartItem[]) {
@@ -69,7 +68,11 @@ export function estimatePudoLockerSize(items: CartItem[]): PudoLockerSize {
   return "XL";
 }
 
-export function getDeliveryFee(method: DeliveryMethod, items: CartItem[]) {
+export function calculateGiftWrapFee(items: CartItem[]) {
+  return items.length * GIFT_WRAP_FEE;
+}
+
+export function getDeliveryFee(method: DeliveryOption, items: CartItem[]) {
   if (method === "collection") {
     return COLLECTION_FEE;
   }

@@ -5,11 +5,12 @@ import { AdminProductsManager } from "@/components/admin-products-manager";
 import { useAuth } from "@/components/auth-provider";
 import { formatCurrency } from "@/lib/pricing";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
-import { CallbackRequest, GalleryItem, OrderRecord, Profile } from "@/types/store";
+import { CallbackRequest, GalleryItem, OrderRecord, Profile, Review } from "@/types/store";
 
 const ORDER_STATUSES = [
   "pending",
   "pending_payment",
+  "waiting_for_approval",
   "paid",
   "processing",
   "ready",
@@ -19,6 +20,7 @@ const ORDER_STATUSES = [
   "failed",
 ] as const;
 const CALLBACK_STATUSES = ["new", "contacted", "closed"] as const;
+const REVIEW_STATUSES = ["pending", "approved", "hidden"] as const;
 
 type GalleryFormState = {
   title: string;
@@ -60,12 +62,32 @@ function sortGalleryItems(items: GalleryItem[]) {
   });
 }
 
+function formatOrderItemDelivery(orderItem: NonNullable<OrderRecord["items"]>[number]) {
+  if (!orderItem.deliveryMethod) {
+    return null;
+  }
+
+  const parts = [
+    orderItem.deliveryGroup === "wrapped"
+      ? "Wrapped items"
+      : orderItem.deliveryGroup === "remaining"
+        ? "Remaining items"
+        : "Delivery",
+    orderItem.deliveryMethod === "pudo" ? "PUDO" : "Pick Up",
+    orderItem.deliveryPudoSize ? `Locker size ${orderItem.deliveryPudoSize}` : "",
+    orderItem.deliveryLockerId ? `Locker ${orderItem.deliveryLockerId}` : "",
+  ].filter(Boolean);
+
+  return parts.join(" | ");
+}
+
 export function AdminDashboard() {
   const { isAdmin, loading, user } = useAuth();
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [callbacks, setCallbacks] = useState<CallbackRequest[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [galleryFormState, setGalleryFormState] = useState<GalleryFormState>(EMPTY_GALLERY_FORM);
   const [editingGalleryId, setEditingGalleryId] = useState("");
   const [status, setStatus] = useState("");
@@ -85,7 +107,13 @@ export function AdminDashboard() {
 
       setLoadingData(true);
 
-      const [{ data: ordersData }, { data: callbackData }, { data: profileData }, { data: galleryData }] =
+      const [
+        { data: ordersData },
+        { data: callbackData },
+        { data: profileData },
+        { data: galleryData },
+        { data: reviewsData },
+      ] =
         await Promise.all([
           supabase
             .from("orders")
@@ -103,12 +131,18 @@ export function AdminDashboard() {
             .select("id, title, category, image_url, caption, featured, created_at")
             .order("featured", { ascending: false })
             .order("created_at", { ascending: false }),
+          supabase
+            .from("reviews")
+            .select("id, customer_id, customer_name, rating, title, message, status, featured, created_at")
+            .order("featured", { ascending: false })
+            .order("created_at", { ascending: false }),
         ]);
 
       setOrders((ordersData as OrderRecord[] | null) ?? []);
       setCallbacks((callbackData as CallbackRequest[] | null) ?? []);
       setProfiles((profileData as Profile[] | null) ?? []);
       setGalleryItems((galleryData as GalleryItem[] | null) ?? []);
+      setReviews((reviewsData as Review[] | null) ?? []);
       setLoadingData(false);
     }
 
@@ -362,6 +396,49 @@ export function AdminDashboard() {
     setStatus("Gallery item removed.");
   }
 
+  async function updateReview(reviewId: string, patch: Partial<Review>, successMessage: string) {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so review changes cannot be saved.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("reviews")
+      .update(patch as never)
+      .eq("id", reviewId)
+      .select("id, customer_id, customer_name, rating, title, message, status, featured, created_at")
+      .single();
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setReviews((current) => current.map((review) => (review.id === reviewId ? (data as Review) : review)));
+    setStatus(successMessage);
+  }
+
+  async function deleteReview(reviewId: string) {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected yet, so reviews cannot be removed.");
+      return;
+    }
+
+    const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
+
+    if (error) {
+      setStatus(error.message);
+      return;
+    }
+
+    setReviews((current) => current.filter((review) => review.id !== reviewId));
+    setStatus("Review removed.");
+  }
+
   if (loading || loadingData) {
     return (
       <section className="glass rounded-[2rem] p-6 md:p-8">
@@ -556,7 +633,7 @@ export function AdminDashboard() {
                       {order.customer_name} | {order.phone} | {order.payment_method.replaceAll("_", " ")}
                     </p>
                     <p className="text-sm text-[var(--mauve)]">
-                      {order.delivery_method}
+                      {order.delivery_method.replaceAll("_", " ")}
                       {order.pudo_size ? ` | PUDO ${order.pudo_size}` : ""}
                     </p>
                   </div>
@@ -582,7 +659,13 @@ export function AdminDashboard() {
                     </button>
                   </div>
                 </div>
-                {order.notes ? <p className="mt-3 text-sm text-[var(--mauve)]">Notes: {order.notes}</p> : null}
+                {order.notes ? (
+                  <div className="mt-3 rounded-[1rem] bg-[var(--light-grey)] px-4 py-3 text-sm leading-7 text-[var(--berry)]">
+                    {order.notes.split("\n").map((line) => (
+                      <p key={line}>{line}</p>
+                    ))}
+                  </div>
+                ) : null}
                 {order.items?.length ? (
                   <div className="mt-4 rounded-[1rem] bg-[var(--light-grey)] p-4">
                     <div className="flex items-center justify-between gap-3">
@@ -610,6 +693,21 @@ export function AdminDashboard() {
                               </p>
                               <p className="mt-2 text-sm leading-7 text-[var(--berry)]">{item.customizationNotes}</p>
                             </div>
+                          ) : null}
+                          {item.giftWrap ? (
+                            <p className="mt-3 text-sm font-bold text-[var(--berry)]">
+                              Gift wrapping has been selected for this item.
+                            </p>
+                          ) : null}
+                          {item.wrappingInstructions ? (
+                            <p className="mt-2 text-sm text-[var(--mauve)]">
+                              Wrapping instructions: {item.wrappingInstructions}
+                            </p>
+                          ) : null}
+                          {formatOrderItemDelivery(item) ? (
+                            <p className="mt-2 text-sm text-[var(--mauve)]">
+                              Delivery: {formatOrderItemDelivery(item)}
+                            </p>
                           ) : null}
                           {item.referenceFiles?.length ? (
                             <div className="mt-3 text-sm text-[var(--mauve)]">
@@ -735,6 +833,65 @@ export function AdminDashboard() {
                   </p>
                 </div>
               ))}
+            </div>
+          </section>
+
+          <section className="glass rounded-[2rem] p-6">
+            <h3 className="font-display text-3xl text-[var(--berry)]">Customer reviews</h3>
+            <div className="mt-5 space-y-3">
+              {reviews.length ? (
+                reviews.map((review) => (
+                  <article key={review.id} className="rounded-[1.2rem] border border-[var(--line)] bg-white/80 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-[var(--berry)]">{review.customer_name}</p>
+                        <p className="text-sm text-[var(--mauve)]">
+                          Rating {review.rating}/5
+                          {review.title ? ` | ${review.title}` : ""}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rose-deep)]">
+                        {review.status}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">{review.message}</p>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <select
+                        value={review.status}
+                        onChange={(event) =>
+                          updateReview(review.id, { status: event.target.value as Review["status"] }, "Review updated.")
+                        }
+                        className="rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--berry)]"
+                      >
+                        {REVIEW_STATUSES.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--berry)]">
+                        <input
+                          type="checkbox"
+                          checked={review.featured}
+                          onChange={(event) =>
+                            updateReview(review.id, { featured: event.target.checked }, "Review updated.")
+                          }
+                        />
+                        Featured
+                      </label>
+                      <button
+                        type="button"
+                        className="button-secondary px-4 py-2 text-sm"
+                        onClick={() => deleteReview(review.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-[var(--mauve)]">No customer reviews submitted yet.</p>
+              )}
             </div>
           </section>
         </div>

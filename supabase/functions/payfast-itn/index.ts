@@ -13,12 +13,12 @@ function encodeValue(value: string) {
 
 function createPayfastSignature(fields: Record<string, string>, passphrase?: string) {
   const payload = Object.entries(fields)
-    .filter(([key, value]) => key !== "signature" && value !== "")
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${encodeValue(value)}`)
+    .filter(([key, value]) => key !== "signature" && value.trim() !== "")
+    .map(([key, value]) => `${key}=${encodeValue(value.trim())}`)
     .join("&");
 
-  const signatureBase = passphrase ? `${payload}&passphrase=${encodeValue(passphrase)}` : payload;
+  const trimmedPassphrase = passphrase?.trim() ?? "";
+  const signatureBase = trimmedPassphrase ? `${payload}&passphrase=${encodeValue(trimmedPassphrase)}` : payload;
   return md5(signatureBase);
 }
 
@@ -49,9 +49,9 @@ Deno.serve(async (request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const merchantId = Deno.env.get("PAYFAST_MERCHANT_ID");
-  const passphrase = Deno.env.get("PAYFAST_PASSPHRASE") ?? "";
-  const payfastMode = Deno.env.get("PAYFAST_MODE") ?? "sandbox";
+  const merchantId = Deno.env.get("PAYFAST_MERCHANT_ID")?.trim();
+  const passphrase = Deno.env.get("PAYFAST_PASSPHRASE")?.trim() ?? "";
+  const payfastMode = Deno.env.get("PAYFAST_MODE")?.trim() || "sandbox";
 
   if (!supabaseUrl || !supabaseServiceRoleKey || !merchantId) {
     return buildTextResponse(500, "Supabase or PayFast secrets are missing.");

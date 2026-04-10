@@ -61,6 +61,8 @@ export type UploadedReference = {
   path: string;
 };
 
+export type DeliveryMethod = "pudo" | "collection" | "split";
+export type DeliveryOption = Exclude<DeliveryMethod, "split">;
 export type CartItem = {
   cartId: string;
   productId: string;
@@ -80,14 +82,18 @@ export type CartItem = {
     heightCm: number;
     price: number;
   };
-  isGift: boolean;
-  giftWrap: boolean;
+  isGift?: boolean;
+  giftWrap?: boolean;
   giftNote?: string;
+  wrappingInstructions?: string;
+  deliveryGroup?: "wrapped" | "remaining";
+  deliveryMethod?: DeliveryOption;
+  deliveryLockerId?: string;
+  deliveryPudoSize?: PudoLockerSize;
   customizationNotes?: string;
   referenceFiles?: UploadedReference[];
 };
 
-export type DeliveryMethod = "pudo" | "collection";
 export type PaymentMethod = "eft" | "payfast" | "scan_to_pay";
 export type PudoLockerSize = "XS" | "S" | "M" | "L" | "XL";
 
@@ -112,6 +118,8 @@ export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
+  phone?: string | null;
+  avatar_url?: string | null;
   role: "customer" | "admin";
   created_at: string;
 };
@@ -153,6 +161,18 @@ export type GalleryItem = {
   category: string | null;
   image_url: string;
   caption: string | null;
+  featured: boolean;
+  created_at: string;
+};
+
+export type Review = {
+  id: string;
+  customer_id: string | null;
+  customer_name: string;
+  rating: number;
+  title: string | null;
+  message: string;
+  status: "pending" | "approved" | "hidden";
   featured: boolean;
   created_at: string;
 };

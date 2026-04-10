@@ -1,7 +1,6 @@
 import {
   BUSINESS_CONTACT,
   DEVELOPER_CREDIT,
-  EFT_DETAILS,
   PAYFAST_ENABLED,
   PAYFAST_STATUS_NOTE,
   PICKUP_DETAILS,
@@ -47,12 +46,10 @@ export function SiteFooter() {
             Payments
           </p>
           <p className="mt-3 text-sm text-[var(--berry)]">
-            EFT: {EFT_DETAILS.bank} | {EFT_DETAILS.accountNumber}
-          </p>
-          <p className="text-sm text-[var(--berry)]">SWIFT/BIC: {EFT_DETAILS.swift}</p>
-          <p className="text-sm text-[var(--berry)]">Branch code: {EFT_DETAILS.branchCode}</p>
-          <p className="mt-3 text-sm text-[var(--berry)]">
             {PAYFAST_ENABLED ? "PayFast is available at checkout." : PAYFAST_STATUS_NOTE}
+          </p>
+          <p className="mt-3 text-sm text-[var(--berry)]">
+            EFT banking details are available on the Contact Us page for customers who prefer manual payment.
           </p>
         </div>
         <div>

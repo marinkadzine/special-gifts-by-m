@@ -40,7 +40,7 @@ export const PICKUP_DETAILS = {
 export const PAYFAST_ENABLED = true;
 
 export const PAYFAST_STATUS_NOTE =
-  "Sandbox mode is active so PayFast can be tested safely before the live launch.";
+  "PayFast takes customers to the secure payment page and orders update automatically once payment confirmation returns.";
 
 export const SCAN_TO_PAY_STATUS_NOTE =
   "Scan to Pay is listed so clients can choose it, and the QR image can be added as soon as it is available.";

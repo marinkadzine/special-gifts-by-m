@@ -9,15 +9,15 @@ function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
-function humanizeStorageError(message: string, fileName: string) {
+function humanizeStorageError(message: string, fileName: string, bucketName: string) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("bucket") && normalized.includes("not found")) {
-    return "The Supabase upload bucket is missing. Please re-run supabase/schema.sql so the 'order-assets' bucket is created, then try the upload again.";
+    return `The Supabase upload bucket is missing. Please re-run supabase/schema.sql so the '${bucketName}' bucket is created, then try the upload again.`;
   }
 
   if (normalized.includes("row-level security") || normalized.includes("permission")) {
-    return "The upload bucket exists, but its storage policy is blocking the upload. Please re-run supabase/schema.sql to refresh the storage policies.";
+    return `The '${bucketName}' bucket exists, but its storage policy is blocking the upload. Please re-run supabase/schema.sql to refresh the storage policies.`;
   }
 
   return message || `Could not upload ${fileName}.`;
@@ -57,7 +57,7 @@ export async function uploadReferenceFiles(files: File[], productSlug: string) {
       });
 
       if (error) {
-        throw new Error(humanizeStorageError(error.message, file.name));
+        throw new Error(humanizeStorageError(error.message, file.name, "order-assets"));
       }
 
       const { data } = supabase.storage.from("order-assets").getPublicUrl(filePath);
@@ -74,4 +74,24 @@ export async function uploadReferenceFiles(files: File[], productSlug: string) {
   );
 
   return uploadedFiles;
+}
+
+export async function uploadProfileImage(file: File, userId: string) {
+  const supabase = getBrowserSupabaseClient();
+
+  if (!supabase) {
+    return "";
+  }
+
+  const filePath = `${userId}/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const { error } = await supabase.storage.from("profile-images").upload(filePath, file, {
+    upsert: true,
+  });
+
+  if (error) {
+    throw new Error(humanizeStorageError(error.message, file.name, "profile-images"));
+  }
+
+  const { data } = supabase.storage.from("profile-images").getPublicUrl(filePath);
+  return data.publicUrl;
 }

@@ -1,7 +1,7 @@
 import { CallbackRequestForm } from "@/components/callback-request-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { BUSINESS_CONTACT, SOCIAL_LINKS } from "@/lib/business-details";
+import { BUSINESS_CONTACT, EFT_DETAILS, SOCIAL_LINKS } from "@/lib/business-details";
 
 export default function ContactPage() {
   return (
@@ -16,7 +16,7 @@ export default function ContactPage() {
             Reach Special Gifts by M your way
           </h1>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
             <div className="rounded-[1.5rem] bg-white/80 p-5">
               <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-[var(--mauve)]">
                 Contact methods
@@ -30,6 +30,19 @@ export default function ContactPage() {
                 <p>
                   <a href={`mailto:${BUSINESS_CONTACT.email}`}>Email: {BUSINESS_CONTACT.email}</a>
                 </p>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] bg-white/80 p-5">
+              <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-[var(--mauve)]">
+                EFT payment details
+              </p>
+              <div className="mt-4 space-y-3 text-sm text-[var(--berry)]">
+                <p>{EFT_DETAILS.accountName}</p>
+                <p>{EFT_DETAILS.bank}</p>
+                <p>Account Number: {EFT_DETAILS.accountNumber}</p>
+                <p>SWIFT/BIC: {EFT_DETAILS.swift}</p>
+                <p>Branch Code: {EFT_DETAILS.branchCode}</p>
               </div>
             </div>
 

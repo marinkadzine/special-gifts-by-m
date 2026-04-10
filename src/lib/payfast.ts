@@ -34,7 +34,7 @@ export async function initiatePayfastCheckout(payload: CheckoutInput) {
     });
   } catch {
     throw new Error(
-      "PayFast sandbox could not be reached. In Supabase, deploy the payfast-init and payfast-itn Edge Functions, add the PAYFAST_* secrets and PUBLIC_SITE_URL, then redeploy Cloudflare Pages.",
+      "PayFast could not be reached. In Supabase, deploy the payfast-init and payfast-itn Edge Functions, add the PAYFAST_* secrets and PUBLIC_SITE_URL, then redeploy Cloudflare Pages.",
     );
   }
 
@@ -54,7 +54,7 @@ export async function initiatePayfastCheckout(payload: CheckoutInput) {
   }
 
   if (!data) {
-    throw new Error("PayFast sandbox returned an invalid response. Please redeploy the Supabase function and try again.");
+    throw new Error("PayFast returned an invalid response. Please redeploy the Supabase function and try again.");
   }
 
   return data;

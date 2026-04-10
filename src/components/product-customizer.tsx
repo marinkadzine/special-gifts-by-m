@@ -3,7 +3,7 @@
 import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Product, UploadedReference } from "@/types/store";
-import { calculateLineItemTotal, calculateVinylPrice, formatCurrency, GIFT_WRAP_FEE } from "@/lib/pricing";
+import { calculateLineItemTotal, calculateVinylPrice, formatCurrency } from "@/lib/pricing";
 import { uploadReferenceFiles } from "@/lib/supabase";
 import { useCart } from "@/components/cart-provider";
 
@@ -11,9 +11,6 @@ export function ProductCustomizer({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [giftWrap, setGiftWrap] = useState(false);
-  const [isGift, setIsGift] = useState(false);
-  const [giftNote, setGiftNote] = useState("");
   const [customizationNotes, setCustomizationNotes] = useState("");
   const [referenceFiles, setReferenceFiles] = useState<UploadedReference[]>([]);
   const [uploadStatus, setUploadStatus] = useState("");
@@ -25,7 +22,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
 
   const selectedPrint = product.printSizes?.find((option) => option.label === printSize);
   const vinylPrice = product.supportsCustomVinyl ? calculateVinylPrice(vinylWidth, vinylHeight) : 0;
-  const lineTotal = calculateLineItemTotal(product, selectedPrint?.price ?? 0, giftWrap, vinylPrice);
+  const lineTotal = calculateLineItemTotal(product, selectedPrint?.price ?? 0, vinylPrice);
 
   function toggleOption(label: string, value: string) {
     setSelectedOptions((current) => ({ ...current, [label]: value }));
@@ -70,7 +67,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
       .map(([label, value]) => `${label}: ${value}`)
       .join(" | ");
 
-    const cartId = `${product.id}-${JSON.stringify(selectedOptions)}-${printSize}-${giftWrap}-${vinylWidth}-${vinylHeight}-${giftNote}-${customizationNotes}-${referenceFiles.map((file) => file.path || file.name).join(",")}`;
+    const cartId = `${product.id}-${JSON.stringify(selectedOptions)}-${printSize}-${vinylWidth}-${vinylHeight}-${customizationNotes}-${referenceFiles.map((file) => file.path || file.name).join(",")}`;
     addItem({
       cartId,
       productId: product.id,
@@ -88,9 +85,6 @@ export function ProductCustomizer({ product }: { product: Product }) {
       customVinyl: product.supportsCustomVinyl
         ? { widthCm: vinylWidth, heightCm: vinylHeight, price: vinylPrice }
         : undefined,
-      isGift,
-      giftWrap,
-      giftNote: giftNote || undefined,
       customizationNotes: customizationNotes.trim(),
       referenceFiles,
     });
@@ -291,31 +285,11 @@ export function ProductCustomizer({ product }: { product: Product }) {
               className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
             />
           </label>
-          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/75 p-4">
-            <label className="flex items-center justify-between gap-3 text-sm font-bold text-[var(--berry)]">
-              Gift order
-              <input type="checkbox" checked={isGift} onChange={() => setIsGift((value) => !value)} />
-            </label>
-            <label className="mt-3 flex items-center justify-between gap-3 text-sm font-bold text-[var(--berry)]">
-              Gift wrap (+{formatCurrency(GIFT_WRAP_FEE)})
-              <input type="checkbox" checked={giftWrap} onChange={() => setGiftWrap((value) => !value)} />
-            </label>
+          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/75 p-4 text-sm leading-7 text-[var(--berry)]">
+            Gift wrapping is now handled at checkout so you can decide exactly which cart items should be wrapped,
+            add wrapping instructions, and choose PUDO or Pick Up for wrapped and unwrapped items separately.
           </div>
         </div>
-
-        {isGift ? (
-          <label className="block text-sm text-[var(--berry)]">
-            Gift note
-            <textarea
-              maxLength={180}
-              value={giftNote}
-              onChange={(event) => setGiftNote(event.target.value)}
-              className="mt-2 min-h-28 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
-              placeholder="Add a short note for the recipient"
-            />
-            <span className="mt-2 block text-xs text-[var(--mauve)]">{giftNote.length}/180</span>
-          </label>
-        ) : null}
       </div>
 
       <button

@@ -559,7 +559,7 @@ export function AdminProductsManager() {
             />
           </label>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
             <label className="flex items-center gap-3 rounded-[1rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm font-bold text-[var(--berry)]">
               <input
                 type="checkbox"
@@ -567,22 +567,6 @@ export function AdminProductsManager() {
                 onChange={(event) => updateField("featured", event.target.checked)}
               />
               Featured item
-            </label>
-            <label className="flex items-center gap-3 rounded-[1rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm font-bold text-[var(--berry)]">
-              <input
-                type="checkbox"
-                checked={formState.supportsGiftWrap}
-                onChange={(event) => updateField("supportsGiftWrap", event.target.checked)}
-              />
-              Gift wrap
-            </label>
-            <label className="flex items-center gap-3 rounded-[1rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm font-bold text-[var(--berry)]">
-              <input
-                type="checkbox"
-                checked={formState.supportsCustomVinyl}
-                onChange={(event) => updateField("supportsCustomVinyl", event.target.checked)}
-              />
-              Custom vinyl
             </label>
             <label className="flex items-center gap-3 rounded-[1rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm font-bold text-[var(--berry)]">
               <input

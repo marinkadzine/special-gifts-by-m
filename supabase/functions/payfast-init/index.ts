@@ -49,12 +49,12 @@ function encodeValue(value: string) {
 
 function createPayfastSignature(fields: Record<string, string>, passphrase?: string) {
   const payload = Object.entries(fields)
-    .filter(([key, value]) => key !== "signature" && value !== "")
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([key, value]) => `${key}=${encodeValue(value)}`)
+    .filter(([key, value]) => key !== "signature" && value.trim() !== "")
+    .map(([key, value]) => `${key}=${encodeValue(value.trim())}`)
     .join("&");
 
-  const signatureBase = passphrase ? `${payload}&passphrase=${encodeValue(passphrase)}` : payload;
+  const trimmedPassphrase = passphrase?.trim() ?? "";
+  const signatureBase = trimmedPassphrase ? `${payload}&passphrase=${encodeValue(trimmedPassphrase)}` : payload;
   return md5(signatureBase);
 }
 
@@ -81,11 +81,11 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const merchantId = Deno.env.get("PAYFAST_MERCHANT_ID");
-  const merchantKey = Deno.env.get("PAYFAST_MERCHANT_KEY");
-  const passphrase = Deno.env.get("PAYFAST_PASSPHRASE") ?? "";
-  const payfastMode = Deno.env.get("PAYFAST_MODE") ?? "sandbox";
-  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL");
+  const merchantId = Deno.env.get("PAYFAST_MERCHANT_ID")?.trim();
+  const merchantKey = Deno.env.get("PAYFAST_MERCHANT_KEY")?.trim();
+  const passphrase = Deno.env.get("PAYFAST_PASSPHRASE")?.trim() ?? "";
+  const payfastMode = Deno.env.get("PAYFAST_MODE")?.trim() || "sandbox";
+  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL")?.trim();
 
   if (!supabaseUrl || !supabaseServiceRoleKey || !merchantId || !merchantKey || !publicSiteUrl) {
     return buildJsonResponse(500, {
@@ -106,7 +106,7 @@ Deno.serve(async (request) => {
   }
 
   if (!payload.email?.trim()) {
-    return buildJsonResponse(400, { error: "Email is required for PayFast sandbox checkout." });
+    return buildJsonResponse(400, { error: "Email is required for PayFast checkout." });
   }
 
   if (!payload.customerName?.trim() || !payload.phone?.trim() || !payload.items?.length) {
@@ -170,16 +170,13 @@ Deno.serve(async (request) => {
     cancel_url: cancelUrl,
     notify_url: notifyUrl,
     name_first: firstName,
+    ...(lastName ? { name_last: lastName } : {}),
     email_address: payload.email.trim(),
     m_payment_id: orderNumber,
     amount: Number(payload.total).toFixed(2),
     item_name: `Special Gifts by M Order ${orderNumber}`,
-    item_description: `Sandbox checkout for ${payload.items.length} Special Gifts by M item(s)`,
+    item_description: `${payload.items.length} Special Gifts by M item(s)`,
   };
-
-  if (lastName) {
-    fields.name_last = lastName;
-  }
 
   fields.signature = createPayfastSignature(fields, passphrase);
 

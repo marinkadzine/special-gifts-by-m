@@ -19,6 +19,8 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users on delete cascade,
   email text not null unique,
   full_name text,
+  phone text,
+  avatar_url text,
   role text not null default 'customer' check (role in ('customer', 'admin')),
   created_at timestamptz not null default timezone('utc', now())
 );
@@ -115,9 +117,13 @@ alter table public.orders
 alter table public.orders
   drop constraint if exists orders_delivery_method_check;
 
+update public.orders
+set delivery_method = 'pudo'
+where delivery_method = 'courier';
+
 alter table public.orders
   add constraint orders_delivery_method_check
-  check (delivery_method in ('pudo', 'courier', 'collection'));
+  check (delivery_method in ('pudo', 'collection', 'split'));
 
 alter table public.orders
   drop constraint if exists orders_payment_method_check;
@@ -166,8 +172,27 @@ create table if not exists public.gallery_items (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid references auth.users on delete set null,
+  customer_name text not null,
+  rating integer not null check (rating between 1 and 5),
+  title text,
+  message text not null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'hidden')),
+  featured boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('order-assets', 'order-assets', true, 10485760)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('profile-images', 'profile-images', true, 5242880)
 on conflict (id) do update
 set
   public = excluded.public,
@@ -229,19 +254,23 @@ alter table public.products enable row level security;
 alter table public.profiles enable row level security;
 alter table public.callback_requests enable row level security;
 alter table public.gallery_items enable row level security;
+alter table public.reviews enable row level security;
 
 grant usage on schema public to anon, authenticated;
 
 grant select on table public.products to anon, authenticated;
 grant select on table public.gallery_items to anon, authenticated;
+grant select on table public.reviews to anon, authenticated;
 grant insert on table public.orders to anon, authenticated;
 grant insert on table public.callback_requests to anon, authenticated;
+grant insert on table public.reviews to authenticated;
 
 grant select, insert, update on table public.products to authenticated;
 grant select, update, delete on table public.orders to authenticated;
 grant select, update, delete on table public.callback_requests to authenticated;
 grant select, update on table public.profiles to authenticated;
 grant select, insert, update, delete on table public.gallery_items to authenticated;
+grant select, update, delete on table public.reviews to authenticated;
 
 drop policy if exists "Public can upload order assets" on storage.objects;
 create policy "Public can upload order assets"
@@ -256,6 +285,20 @@ on storage.objects
 for select
 to anon, authenticated
 using (bucket_id = 'order-assets');
+
+drop policy if exists "Authenticated users can upload profile images" on storage.objects;
+create policy "Authenticated users can upload profile images"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'profile-images');
+
+drop policy if exists "Public can read profile images" on storage.objects;
+create policy "Public can read profile images"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'profile-images');
 
 drop policy if exists "Public can read products" on public.products;
 create policy "Public can read products"
@@ -282,6 +325,32 @@ using (true);
 drop policy if exists "Admins can manage gallery items" on public.gallery_items;
 create policy "Admins can manage gallery items"
 on public.gallery_items
+for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Public can read approved reviews" on public.reviews;
+create policy "Public can read approved reviews"
+on public.reviews
+for select
+to anon, authenticated
+using (status = 'approved' or public.is_admin());
+
+drop policy if exists "Authenticated users can create reviews" on public.reviews;
+create policy "Authenticated users can create reviews"
+on public.reviews
+for insert
+to authenticated
+with check (
+  customer_id = auth.uid()
+  and status = 'pending'
+  and rating between 1 and 5
+);
+
+drop policy if exists "Admins can manage reviews" on public.reviews;
+create policy "Admins can manage reviews"
+on public.reviews
 for all
 to authenticated
 using (public.is_admin())
