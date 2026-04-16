@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InstallAppPrompt } from "@/components/install-app-prompt";
+import { DOWNLOAD_PAGE_URL } from "@/lib/app-distribution";
 
 export function Hero() {
   return (
@@ -26,6 +27,9 @@ export function Hero() {
           <Link href="#store-ready-made" className="button-secondary text-center">
             Shop Ready-Made
           </Link>
+          <a href={DOWNLOAD_PAGE_URL} className="button-secondary text-center">
+            Download App
+          </a>
         </div>
         <InstallAppPrompt />
       </div>

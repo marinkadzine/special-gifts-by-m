@@ -1,0 +1,13 @@
+{
+  "androidVersion": "1.0.0",
+  "versionCode": 1,
+  "releasedAt": "2026-04-17",
+  "downloadUrl": "https://github.com/marinkadzine/special-gifts-by-m/releases/latest/download/special-gifts-by-m.apk",
+  "downloadPageUrl": "https://special-gifts-app.pages.dev/download",
+  "releaseNotes": [
+    "Live shopping flow with personalized and ready-made products.",
+    "Customer accounts with profile updates, gallery access, and reviews.",
+    "Gift wrapping, PUDO or Pick Up delivery planning, and checkout terms.",
+    "Admin tools for orders, callback requests, gallery updates, and store edits."
+  ]
+}

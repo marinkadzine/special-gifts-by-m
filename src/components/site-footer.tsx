@@ -6,11 +6,12 @@ import {
   PICKUP_DETAILS,
   SOCIAL_LINKS,
 } from "@/lib/business-details";
+import { ANDROID_APP_VERSION, DOWNLOAD_PAGE_URL } from "@/lib/app-distribution";
 
 export function SiteFooter() {
   return (
     <footer className="mt-20 border-t border-white/40 bg-white/50">
-      <div className="shell grid gap-8 py-10 md:grid-cols-4">
+      <div className="shell grid gap-8 py-10 md:grid-cols-2 xl:grid-cols-5">
         <div>
           <p className="font-display text-2xl text-[var(--berry)]">{BUSINESS_CONTACT.businessName}</p>
           <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">
@@ -50,6 +51,20 @@ export function SiteFooter() {
           </p>
           <p className="mt-3 text-sm text-[var(--berry)]">
             EFT banking details are available on the Contact Us page for customers who prefer manual payment.
+          </p>
+        </div>
+        <div>
+          <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
+            App download
+          </p>
+          <p className="mt-3 text-sm text-[var(--berry)]">
+            Android version {ANDROID_APP_VERSION}
+          </p>
+          <p className="text-sm text-[var(--berry)]">
+            <a href={DOWNLOAD_PAGE_URL}>Download App / Update App</a>
+          </p>
+          <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">
+            Customers can always use the live download page to install the latest Android APK.
           </p>
         </div>
         <div>

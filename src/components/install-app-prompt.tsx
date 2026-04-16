@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ANDROID_APK_DOWNLOAD_URL, DOWNLOAD_PAGE_URL } from "@/lib/app-distribution";
 
 const DISMISS_KEY = "sgm-install-dismissed";
 
@@ -123,6 +124,9 @@ export function InstallAppPrompt() {
         Use the web app in your browser, or install it on your phone for quick full-screen access,
         easier repeat ordering, and a more app-like experience.
       </p>
+      <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">
+        Need the Android APK or future app updates? Use the live download page below.
+      </p>
       {visibilityState.showIosInstructions ? (
         <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">
           On iPhone or iPad, tap the Share button in Safari and choose <strong>Add to Home Screen</strong>.
@@ -134,6 +138,12 @@ export function InstallAppPrompt() {
             Install App
           </button>
         ) : null}
+        <a href={DOWNLOAD_PAGE_URL} className="button-secondary text-center">
+          Download Page
+        </a>
+        <a href={ANDROID_APK_DOWNLOAD_URL} className="button-secondary text-center">
+          Android APK
+        </a>
         <button type="button" className="button-secondary text-center" onClick={handleDismiss}>
           {visibilityState.showIosInstructions ? "Hide Tips" : "Maybe Later"}
         </button>

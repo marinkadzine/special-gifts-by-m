@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
 import { useWishlist } from "@/components/wishlist-provider";
+import { DOWNLOAD_PAGE_URL } from "@/lib/app-distribution";
 
 export function SiteHeader() {
   const { items } = useCart();
@@ -29,6 +30,7 @@ export function SiteHeader() {
   ];
   const galleryLink = { href: "/gallery", label: "Gallery" };
   const reviewsLink = { href: "/reviews", label: "Reviews" };
+  const downloadLink = { href: DOWNLOAD_PAGE_URL, label: "Download App", external: true };
 
   const menuLinks = [
     { href: "/about", label: "About Us" },
@@ -36,6 +38,7 @@ export function SiteHeader() {
     { href: "/contact", label: "Contact Us" },
     galleryLink,
     reviewsLink,
+    downloadLink,
     ...storeLinks,
   ];
 
@@ -104,6 +107,9 @@ export function SiteHeader() {
                 ) : null}
               </div>
 
+              <a href={DOWNLOAD_PAGE_URL} className="button-secondary px-4 py-3 text-sm">
+                Download App
+              </a>
               <Link href="/account" className="button-primary text-sm">
                 Sign Up / Login
               </Link>
@@ -154,16 +160,27 @@ export function SiteHeader() {
                     className="absolute right-0 top-[calc(100%+0.75rem)] w-72 rounded-[1.8rem] border border-white/40 bg-white/92 p-4 shadow-[var(--shadow)]"
                   >
                     <nav className="space-y-2">
-                      {menuLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="block rounded-[1rem] px-4 py-3 text-sm font-bold text-[var(--berry)] transition hover:bg-[var(--soft-rose)]"
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                      {menuLinks.map((link) =>
+                        "external" in link && link.external ? (
+                          <a
+                            key={link.href}
+                            href={link.href}
+                            className="block rounded-[1rem] px-4 py-3 text-sm font-bold text-[var(--berry)] transition hover:bg-[var(--soft-rose)]"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className="block rounded-[1rem] px-4 py-3 text-sm font-bold text-[var(--berry)] transition hover:bg-[var(--soft-rose)]"
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            {link.label}
+                          </Link>
+                        ),
+                      )}
                       <button
                         type="button"
                         onClick={handleSignOut}
