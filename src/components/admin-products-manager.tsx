@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStoreProducts } from "@/hooks/use-store-products";
+import { getStoreSectionLabel } from "@/lib/store-navigation";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/pricing";
 import { Product, ProductOptionGroup, PrintSizeOption, ProductRecord, StoreSection } from "@/types/store";
@@ -466,7 +467,7 @@ export function AdminProductsManager() {
                 className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
               >
                 <option value="personalized">Personalized</option>
-                <option value="ready-made">Ready-made</option>
+                <option value="ready-made">Designed</option>
               </select>
             </label>
             <label className="text-sm text-[var(--berry)]">
@@ -625,7 +626,7 @@ export function AdminProductsManager() {
                     <div>
                       <p className="font-bold text-[var(--berry)]">{product.name}</p>
                       <p className="text-sm text-[var(--mauve)]">
-                        {product.category} | {product.storeSection}
+                        {product.category} | {getStoreSectionLabel(product.storeSection)}
                       </p>
                       <p className="mt-1 text-sm text-[var(--mauve)]">{product.slug}</p>
                     </div>

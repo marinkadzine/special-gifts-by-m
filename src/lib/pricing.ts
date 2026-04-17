@@ -26,10 +26,111 @@ export const PUDO_LOCKER_OPTIONS: Record<
 const PRODUCT_OPTION_BASE_PRICES: Record<string, Record<string, Record<string, number>>> = {
   "photo-stone-slab": {
     Size: {
-      "120x220": 120,
-      "150x150": 130,
-      "150x200": 135,
+      "120x220": 130,
+      "150x150": 120,
+      "150x200": 130,
       "200x200": 140,
+    },
+  },
+  "wood-mdf-frame": {
+    Size: {
+      "120x120": 24,
+      "200x200": 58,
+      "150x150": 34,
+      A4: 83,
+      A5: 41,
+    },
+  },
+  "wood-mdf-photo-display": {
+    Type: {
+      "001": 36,
+      "002": 42,
+      "004": 35,
+      "005": 40,
+    },
+  },
+  "custom-gift-bag": {
+    Size: {
+      A6: 25,
+      A5: 30,
+      "A4 Portrait": 35,
+      "A4 Landscape": 35,
+    },
+  },
+  "custom-pop-socket": {
+    Colour: {
+      Black: 70,
+      White: 70,
+    },
+  },
+  "custom-hand-fan": {
+    Shape: {
+      Round: 35,
+      Square: 35,
+    },
+  },
+  "custom-hair-brush": {
+    Type: {
+      Kids: 35,
+      Adults: 100,
+    },
+  },
+  "custom-coasters": {
+    Type: {
+      "Cardboard (4 Pack)": 30,
+      Polymer: 40,
+    },
+  },
+  "christmas-hat": {
+    Type: {
+      Kids: 45,
+      Adults: 50,
+    },
+  },
+  "can-tumbler": {
+    Size: {
+      "250ml": 165,
+      "400ml": 190,
+    },
+  },
+  "skinny-tumbler": {
+    Size: {
+      "425ml": 240,
+      "570ml": 250,
+    },
+  },
+  "minimalist-business-cards": {
+    Quantity: {
+      "50": 80,
+      "100": 150,
+      "500": 600,
+    },
+  },
+  "colour-business-cards": {
+    Quantity: {
+      "50": 110,
+      "100": 210,
+      "500": 350,
+    },
+  },
+  "double-sided-minimalist-business-cards": {
+    Quantity: {
+      "50": 100,
+      "100": 190,
+      "500": 800,
+    },
+  },
+  "double-sided-colour-business-cards": {
+    Quantity: {
+      "50": 130,
+      "100": 250,
+      "500": 1150,
+    },
+  },
+  "a6-flyers": {
+    Sides: {
+      "Single Sided": 200,
+      "Double Sided": 300,
     },
   },
 };

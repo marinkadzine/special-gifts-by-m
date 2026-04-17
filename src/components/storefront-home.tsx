@@ -11,13 +11,14 @@ import { SiteHeader } from "@/components/site-header";
 import { SpecialsSlider } from "@/components/specials-slider";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { DEVELOPER_CREDIT } from "@/lib/business-details";
+import { getCategoryAnchor } from "@/lib/store-navigation";
 
 export function StorefrontHome() {
   const { categories, error, featuredProducts, personalizedProducts, readyMadeProducts } = useStoreProducts();
   const personalizedCategories = categories.filter((category) =>
     personalizedProducts.some((product) => product.category === category),
   );
-  const readyMadeCategories = categories.filter((category) =>
+  const designedCategories = categories.filter((category) =>
     readyMadeProducts.some((product) => product.category === category),
   );
 
@@ -34,10 +35,10 @@ export function StorefrontHome() {
             <div className="mt-4 grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
               <div>
                 <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
-                  Personalized gifts and ready-made picks in one beautiful shopping flow
+                  Personalized gifts and designed items in one beautiful shopping flow
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--mauve)]">
-                  Shop custom apparel, drinkware, decor, and branded items, then switch to ready-made
+                  Shop custom apparel, drinkware, decor, and branded items, then switch to designed
                   gift picks whenever you want something faster and easier to choose.
                 </p>
               </div>
@@ -74,35 +75,37 @@ export function StorefrontHome() {
                 Create custom gifts with your artwork and instructions
               </h2>
             </div>
-            <CategoryPills categories={personalizedCategories} />
+            <CategoryPills categories={personalizedCategories} section="personalized" />
           </div>
 
           {personalizedCategories.map((category) => (
             <CatalogueSection
               key={category}
               title={category}
+              anchorId={getCategoryAnchor("personalized", category)}
               products={personalizedProducts.filter((product) => product.category === category)}
             />
           ))}
         </section>
 
-        <section id="store-ready-made" className="shell">
+        <section id="store-designed" className="shell">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">
-                Ready-Made Items
+                Designed Items
               </p>
               <h2 className="font-display text-4xl text-[var(--berry)] md:text-5xl">
-                Gift-ready picks for customers who want a faster choice
+                Designed and finished items ready for customers who want a faster choice
               </h2>
             </div>
-            <CategoryPills categories={readyMadeCategories} />
+            <CategoryPills categories={designedCategories} section="ready-made" />
           </div>
 
-          {readyMadeCategories.map((category) => (
+          {designedCategories.map((category) => (
             <CatalogueSection
               key={category}
               title={category}
+              anchorId={getCategoryAnchor("ready-made", category)}
               products={readyMadeProducts.filter((product) => product.category === category)}
             />
           ))}

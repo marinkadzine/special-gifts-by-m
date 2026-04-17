@@ -245,9 +245,9 @@ export function ProductCustomizer({ product }: { product: Product }) {
             Upload logos, photos, or design references
           </p>
           <p className="mt-2 text-sm font-bold text-[var(--rose-deep)]">
-            {product.storeSection === "personalized"
-              ? "Required for personalized items."
-              : "Optional for ready-made items."}
+              {product.storeSection === "personalized"
+                ? "Required for personalized items."
+                : "Optional for designed items."}
           </p>
           <label className="mt-3 block text-sm text-[var(--berry)]">
             Choose one or more files

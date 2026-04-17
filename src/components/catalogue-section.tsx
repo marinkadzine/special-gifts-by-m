@@ -4,12 +4,14 @@ import { ProductCard } from "@/components/product-card";
 export function CatalogueSection({
   title,
   products,
+  anchorId,
 }: {
   title: string;
   products: Product[];
+  anchorId?: string;
 }) {
   return (
-    <section id={`category-${title.toLowerCase().replace(/\s+/g, "-")}`} className="mt-12">
+    <section id={anchorId ?? `category-${title.toLowerCase().replace(/\s+/g, "-")}`} className="mt-12">
       <div className="mb-5 flex items-center justify-between gap-4">
         <h3 className="font-display text-4xl text-[var(--berry)]">{title}</h3>
         <p className="text-sm font-bold uppercase tracking-[0.24em] text-[var(--mauve)]">

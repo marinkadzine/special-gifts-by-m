@@ -9,7 +9,7 @@ export const ANDROID_VERSION_CODE = 1;
 export const ANDROID_RELEASE_DATE = "2026-04-17";
 
 export const ANDROID_RELEASE_NOTES = [
-  "Live shopping flow with personalized and ready-made products.",
+  "Live shopping flow with personalized and designed products.",
   "Customer accounts with profile updates, gallery access, and reviews.",
   "Gift wrapping, PUDO or Pick Up delivery planning, and checkout terms.",
   "Admin tools for orders, callback requests, gallery updates, and store edits.",

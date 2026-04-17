@@ -6,12 +6,15 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
 import { useWishlist } from "@/components/wishlist-provider";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { DOWNLOAD_PAGE_URL } from "@/lib/app-distribution";
+import { getCategoryAnchor, getStoreSectionAnchor, getStoreSectionLabel } from "@/lib/store-navigation";
 
 export function SiteHeader() {
   const { items } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { isAdmin, profile, signOut, user } = useAuth();
+  const { categories, personalizedProducts, readyMadeProducts } = useStoreProducts();
   const [menuOpen, setMenuOpen] = useState(false);
   const [storeOpen, setStoreOpen] = useState(false);
   const count = items.reduce((total, item) => total + item.quantity, 0);
@@ -24,9 +27,26 @@ export function SiteHeader() {
     .map((part: string) => part[0]?.toUpperCase() || "")
     .join("");
 
-  const storeLinks = [
-    { href: "/#store-personalized", label: "Personalized Items" },
-    { href: "/#store-ready-made", label: "Ready-Made Items" },
+  const personalizedCategories = categories.filter((category) =>
+    personalizedProducts.some((product) => product.category === category),
+  );
+  const designedCategories = categories.filter((category) =>
+    readyMadeProducts.some((product) => product.category === category),
+  );
+
+  const storeSections = [
+    {
+      section: "personalized" as const,
+      href: `/#${getStoreSectionAnchor("personalized")}`,
+      label: getStoreSectionLabel("personalized"),
+      categories: personalizedCategories,
+    },
+    {
+      section: "ready-made" as const,
+      href: `/#${getStoreSectionAnchor("ready-made")}`,
+      label: getStoreSectionLabel("ready-made"),
+      categories: designedCategories,
+    },
   ];
   const galleryLink = { href: "/gallery", label: "Gallery" };
   const reviewsLink = { href: "/reviews", label: "Reviews" };
@@ -39,7 +59,6 @@ export function SiteHeader() {
     galleryLink,
     reviewsLink,
     downloadLink,
-    ...storeLinks,
   ];
 
   async function handleSignOut() {
@@ -92,7 +111,30 @@ export function SiteHeader() {
                     className="absolute right-0 top-[calc(100%+0.75rem)] w-72 rounded-[1.8rem] border border-white/40 bg-white/92 p-4 shadow-[var(--shadow)]"
                   >
                     <nav className="space-y-2">
-                      {[...storeLinks, galleryLink, reviewsLink].map((link) => (
+                      {storeSections.map((storeSection) => (
+                        <div key={storeSection.section} className="rounded-[1.2rem] border border-[var(--line)] bg-white/75 p-3">
+                          <Link
+                            href={storeSection.href}
+                            className="block rounded-[0.9rem] px-3 py-2 text-sm font-extrabold text-[var(--berry)] transition hover:bg-[var(--soft-rose)]"
+                            onClick={() => setStoreOpen(false)}
+                          >
+                            {storeSection.label}
+                          </Link>
+                          <div className="mt-2 flex flex-wrap gap-2 px-1">
+                            {storeSection.categories.map((category) => (
+                              <Link
+                                key={`${storeSection.section}-${category}`}
+                                href={`/#${getCategoryAnchor(storeSection.section, category)}`}
+                                className="rounded-full border border-[var(--line)] bg-white px-3 py-2 text-xs font-bold text-[var(--berry)] transition hover:border-[var(--rose)]"
+                                onClick={() => setStoreOpen(false)}
+                              >
+                                {category}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {[galleryLink, reviewsLink].map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
@@ -116,6 +158,53 @@ export function SiteHeader() {
             </>
           ) : (
             <>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStoreOpen((value) => !value);
+                    setMenuOpen(false);
+                  }}
+                  className="button-secondary min-w-28 px-5 py-3 text-sm"
+                  aria-expanded={storeOpen}
+                  aria-controls="store-menu"
+                >
+                  Store
+                </button>
+
+                {storeOpen ? (
+                  <div
+                    id="store-menu"
+                    className="absolute right-0 top-[calc(100%+0.75rem)] w-[22rem] rounded-[1.8rem] border border-white/40 bg-white/92 p-4 shadow-[var(--shadow)]"
+                  >
+                    <nav className="space-y-3">
+                      {storeSections.map((storeSection) => (
+                        <div key={storeSection.section} className="rounded-[1.2rem] border border-[var(--line)] bg-white/75 p-3">
+                          <Link
+                            href={storeSection.href}
+                            className="block rounded-[0.9rem] px-3 py-2 text-sm font-extrabold text-[var(--berry)] transition hover:bg-[var(--soft-rose)]"
+                            onClick={() => setStoreOpen(false)}
+                          >
+                            {storeSection.label}
+                          </Link>
+                          <div className="mt-2 flex flex-wrap gap-2 px-1">
+                            {storeSection.categories.map((category) => (
+                              <Link
+                                key={`${storeSection.section}-${category}`}
+                                href={`/#${getCategoryAnchor(storeSection.section, category)}`}
+                                className="rounded-full border border-[var(--line)] bg-white px-3 py-2 text-xs font-bold text-[var(--berry)] transition hover:border-[var(--rose)]"
+                                onClick={() => setStoreOpen(false)}
+                              >
+                                {category}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </nav>
+                  </div>
+                ) : null}
+              </div>
               <Link href={isAdmin ? "/admin" : "/account"} className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-sm">
                 {profile?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element

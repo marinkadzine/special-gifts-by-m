@@ -14,7 +14,7 @@ export function Hero() {
           Special Gifts by M
         </p>
         <h1 className="font-display text-5xl leading-none text-[var(--berry)] md:text-7xl">
-          Personalized gifts and ready-made picks in one soft, elegant app.
+          Personalized gifts and designed items in one soft, elegant app.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--mauve)]">
           Browse featured items, save a wishlist, upload artwork for custom products, and place gift
@@ -24,8 +24,8 @@ export function Hero() {
           <Link href="#store-personalized" className="button-primary text-center">
             Shop Personalized
           </Link>
-          <Link href="#store-ready-made" className="button-secondary text-center">
-            Shop Ready-Made
+          <Link href="#store-designed" className="button-secondary text-center">
+            Shop Designed
           </Link>
           <a href={DOWNLOAD_PAGE_URL} className="button-secondary text-center">
             Download App
