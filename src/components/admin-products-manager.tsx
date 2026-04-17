@@ -48,6 +48,10 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   active: true,
 };
 
+function isCustomVinylStickerSlug(slug: string) {
+  return slug.trim().toLowerCase() === "custom-vinyl-sticker";
+}
+
 function formatOptionGroups(optionGroups?: ProductOptionGroup[]) {
   return optionGroups?.length ? JSON.stringify(optionGroups, null, 2) : "";
 }
@@ -73,7 +77,7 @@ function createFormState(product?: Product): ProductFormState {
     imageUrl: product.image ?? "",
     galleryImages: product.galleryImages?.join("\n") ?? "",
     badges: product.badges?.join(", ") ?? "",
-    variantOptions: formatOptionGroups(product.variantOptions),
+    variantOptions: isCustomVinylStickerSlug(product.slug) ? "" : formatOptionGroups(product.variantOptions),
     printSizes: formatPrintSizes(product.printSizes),
     featured: Boolean(product.featured),
     supportsGiftWrap: Boolean(product.supportsGiftWrap),
@@ -95,7 +99,9 @@ function createFormStateFromRecord(record: ProductRecord): ProductFormState {
     imageUrl: record.image_url ?? "",
     galleryImages: Array.isArray(record.gallery_images) ? record.gallery_images.map((entry) => String(entry)).join("\n") : "",
     badges: Array.isArray(record.badges) ? record.badges.map((entry) => String(entry)).join(", ") : "",
-    variantOptions: formatOptionGroups(Array.isArray(record.variant_options) ? (record.variant_options as ProductOptionGroup[]) : undefined),
+    variantOptions: isCustomVinylStickerSlug(record.slug)
+      ? ""
+      : formatOptionGroups(Array.isArray(record.variant_options) ? (record.variant_options as ProductOptionGroup[]) : undefined),
     printSizes: formatPrintSizes(Array.isArray(record.print_sizes) ? (record.print_sizes as PrintSizeOption[]) : undefined),
     featured: Boolean(record.featured),
     supportsGiftWrap: Boolean(record.supports_gift_wrap),
@@ -365,7 +371,7 @@ export function AdminProductsManager() {
         image_url: formState.imageUrl.trim() || null,
         gallery_images: parseLineList(formState.galleryImages),
         badges: parseCommaList(formState.badges),
-        variant_options: parseVariantOptions(formState.variantOptions),
+        variant_options: isCustomVinylStickerSlug(trimmedSlug) ? null : parseVariantOptions(formState.variantOptions),
         print_sizes: parsePrintSizeLines(formState.printSizes),
         active: formState.active,
       };
@@ -554,7 +560,11 @@ export function AdminProductsManager() {
             <textarea
               value={formState.variantOptions}
               onChange={(event) => updateField("variantOptions", event.target.value)}
-              placeholder='[{"label":"Size","values":["S","M","L"]}]'
+              placeholder={
+                isCustomVinylStickerSlug(formState.slug)
+                  ? "Vinyl stickers now use only the live size calculator, so no extra finish options are needed here."
+                  : '[{"label":"Size","values":["S","M","L"]}]'
+              }
               className="mt-2 min-h-36 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3 font-mono text-xs"
             />
           </label>

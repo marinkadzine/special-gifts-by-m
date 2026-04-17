@@ -164,6 +164,17 @@ textarea {
   animation: fadeUp 700ms ease both;
 }
 
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marqueeMove 24s linear infinite;
+}
+
+.marquee-copy {
+  padding-right: 2.2rem;
+  white-space: nowrap;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;
@@ -172,6 +183,22 @@ textarea {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes marqueeMove {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .marquee-track {
+    animation: none;
   }
 }
 

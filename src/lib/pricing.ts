@@ -23,19 +23,48 @@ export const PUDO_LOCKER_OPTIONS: Record<
   XL: { label: "Extra Large", maxItems: Number.POSITIVE_INFINITY, fee: 140, dimensions: "60 x 41 x 69 cm" },
 };
 
+const PRODUCT_OPTION_BASE_PRICES: Record<string, Record<string, Record<string, number>>> = {
+  "photo-stone-slab": {
+    Size: {
+      "120x220": 120,
+      "150x150": 130,
+      "150x200": 135,
+      "200x200": 140,
+    },
+  },
+};
+
+export const VINYL_PRICE_PER_SQUARE_CM = 3;
+
 export function calculateVinylPrice(widthCm: number, heightCm: number) {
   const safeWidth = Math.max(widthCm, 5);
   const safeHeight = Math.max(heightCm, 5);
 
-  return Math.round(safeWidth * safeHeight * 3);
+  return Math.round(safeWidth * safeHeight * VINYL_PRICE_PER_SQUARE_CM);
 }
 
-export function calculateLineItemTotal(
-  product: Product,
-  printUpcharge = 0,
-  customVinylPrice = 0,
-) {
-  return product.basePrice + printUpcharge + customVinylPrice;
+export function getOptionValuePrice(product: Product, groupLabel: string, value: string) {
+  return PRODUCT_OPTION_BASE_PRICES[product.slug]?.[groupLabel]?.[value];
+}
+
+export function getConfiguredBasePrice(product: Product, selectedOptions: Record<string, string>) {
+  for (const [groupLabel, value] of Object.entries(selectedOptions)) {
+    const configuredPrice = getOptionValuePrice(product, groupLabel, value);
+
+    if (typeof configuredPrice === "number") {
+      return configuredPrice;
+    }
+  }
+
+  return product.basePrice;
+}
+
+export function getRequiredPricedOptionGroups(product: Product) {
+  return Object.keys(PRODUCT_OPTION_BASE_PRICES[product.slug] ?? {});
+}
+
+export function calculateLineItemTotal(basePrice: number, printUpcharge = 0, customVinylPrice = 0) {
+  return basePrice + printUpcharge + customVinylPrice;
 }
 
 export function calculateCartSubtotal(items: CartItem[]) {

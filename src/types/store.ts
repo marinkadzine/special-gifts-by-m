@@ -3,6 +3,8 @@ export type ProductOptionGroup = {
   values: string[];
 };
 
+export type ProductOptionPriceMap = Record<string, number>;
+
 export type PrintSizeOption = {
   label: string;
   price: number;
@@ -160,6 +162,7 @@ export type GalleryItem = {
   title: string;
   category: string | null;
   image_url: string;
+  gallery_images?: string[] | null;
   caption: string | null;
   featured: boolean;
   created_at: string;

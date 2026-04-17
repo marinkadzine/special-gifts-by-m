@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { AdminProductsManager } from "@/components/admin-products-manager";
 import { useAuth } from "@/components/auth-provider";
+import { fetchGalleryItems, getGalleryImages } from "@/lib/gallery-items";
 import { formatCurrency } from "@/lib/pricing";
-import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { getBrowserSupabaseClient, uploadGalleryImages } from "@/lib/supabase";
 import { CallbackRequest, GalleryItem, OrderRecord, Profile, Review } from "@/types/store";
 
 const ORDER_STATUSES = [
@@ -26,6 +27,7 @@ type GalleryFormState = {
   title: string;
   category: string;
   imageUrl: string;
+  galleryImages: string;
   caption: string;
   featured: boolean;
 };
@@ -34,9 +36,35 @@ const EMPTY_GALLERY_FORM: GalleryFormState = {
   title: "",
   category: "",
   imageUrl: "",
+  galleryImages: "",
   caption: "",
   featured: false,
 };
+
+function parseLineList(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function buildGalleryImageList(imageUrl: string, galleryImagesText: string) {
+  return Array.from(new Set([imageUrl.trim(), ...parseLineList(galleryImagesText)].filter(Boolean)));
+}
+
+function humanizeGalleryError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("gallery_images")) {
+    return "The gallery table needs the latest Supabase schema before multiple gallery images can be saved. Please re-run supabase/schema.sql and try again.";
+  }
+
+  if (normalized.includes("gallery-images")) {
+    return "The gallery-images storage bucket is missing or blocked. Please re-run supabase/schema.sql so gallery uploads can work.";
+  }
+
+  return message;
+}
 
 function createGalleryFormState(item?: GalleryItem): GalleryFormState {
   if (!item) {
@@ -47,6 +75,9 @@ function createGalleryFormState(item?: GalleryItem): GalleryFormState {
     title: item.title,
     category: item.category ?? "",
     imageUrl: item.image_url,
+    galleryImages: getGalleryImages(item)
+      .filter((image) => image !== item.image_url)
+      .join("\n"),
     caption: item.caption ?? "",
     featured: item.featured,
   };
@@ -93,6 +124,7 @@ export function AdminDashboard() {
   const [status, setStatus] = useState("");
   const [loadingData, setLoadingData] = useState(false);
   const [savingGallery, setSavingGallery] = useState(false);
+  const [uploadingGalleryImages, setUploadingGalleryImages] = useState(false);
   const galleryFormSectionRef = useRef<HTMLElement | null>(null);
 
   const sortedGalleryItems = sortGalleryItems(galleryItems);
@@ -111,7 +143,7 @@ export function AdminDashboard() {
         { data: ordersData },
         { data: callbackData },
         { data: profileData },
-        { data: galleryData },
+        galleryResult,
         { data: reviewsData },
       ] =
         await Promise.all([
@@ -126,11 +158,7 @@ export function AdminDashboard() {
             .select("id, full_name, phone, email, preferred_time, message, status, created_at")
             .order("created_at", { ascending: false }),
           supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-          supabase
-            .from("gallery_items")
-            .select("id, title, category, image_url, caption, featured, created_at")
-            .order("featured", { ascending: false })
-            .order("created_at", { ascending: false }),
+          fetchGalleryItems(supabase),
           supabase
             .from("reviews")
             .select("id, customer_id, customer_name, rating, title, message, status, featured, created_at")
@@ -141,8 +169,11 @@ export function AdminDashboard() {
       setOrders((ordersData as OrderRecord[] | null) ?? []);
       setCallbacks((callbackData as CallbackRequest[] | null) ?? []);
       setProfiles((profileData as Profile[] | null) ?? []);
-      setGalleryItems((galleryData as GalleryItem[] | null) ?? []);
+      setGalleryItems(galleryResult.items);
       setReviews((reviewsData as Review[] | null) ?? []);
+      if (galleryResult.error) {
+        setStatus(humanizeGalleryError(galleryResult.error.message));
+      }
       setLoadingData(false);
     }
 
@@ -172,6 +203,40 @@ export function AdminDashboard() {
     setGalleryFormState(createGalleryFormState(item));
     setStatus(`Editing gallery item ${item.title}.`);
     focusGalleryEditor();
+  }
+
+  async function handleGalleryImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    const folderName =
+      galleryFormState.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || editingGalleryId || "gallery-item";
+
+    setUploadingGalleryImages(true);
+    setStatus(`Uploading ${files.length} gallery image${files.length === 1 ? "" : "s"}...`);
+
+    try {
+      const uploadedUrls = await uploadGalleryImages(files, folderName);
+      const coverImage = galleryFormState.imageUrl.trim() || uploadedUrls[0] || "";
+      const nextGalleryImages = Array.from(
+        new Set([...parseLineList(galleryFormState.galleryImages), ...uploadedUrls].filter((image) => image !== coverImage)),
+      );
+
+      setGalleryFormState((current) => ({
+        ...current,
+        imageUrl: coverImage || current.imageUrl,
+        galleryImages: nextGalleryImages.join("\n"),
+      }));
+      setStatus(`${uploadedUrls.length} gallery image${uploadedUrls.length === 1 ? "" : "s"} uploaded.`);
+      event.target.value = "";
+    } catch (error) {
+      setStatus(error instanceof Error ? humanizeGalleryError(error.message) : "Could not upload the gallery images.");
+    } finally {
+      setUploadingGalleryImages(false);
+    }
   }
 
   async function updateOrderStatus(orderId: string, nextStatus: string) {
@@ -318,10 +383,12 @@ export function AdminDashboard() {
       return;
     }
 
+    const galleryImages = buildGalleryImageList(galleryFormState.imageUrl, galleryFormState.galleryImages);
     const basePayload = {
       title: galleryFormState.title.trim(),
       category: galleryFormState.category.trim() || null,
       image_url: galleryFormState.imageUrl.trim(),
+      gallery_images: galleryImages,
       caption: galleryFormState.caption.trim() || null,
       featured: galleryFormState.featured,
     };
@@ -333,37 +400,39 @@ export function AdminDashboard() {
 
     setSavingGallery(true);
 
-    const request = editingGalleryId
-      ? supabase
-          .from("gallery_items")
-          .update(basePayload as never)
-          .eq("id", editingGalleryId)
-          .select("id, title, category, image_url, caption, featured, created_at")
-          .single()
-      : supabase
-          .from("gallery_items")
-          .insert({
-            ...basePayload,
-            created_by: user?.id ?? null,
-          } as never)
-          .select("id, title, category, image_url, caption, featured, created_at")
-          .single();
-
-    const { data, error } = await request;
+    const { error } = await (editingGalleryId
+      ? supabase.from("gallery_items").update(basePayload as never).eq("id", editingGalleryId)
+      : supabase.from("gallery_items").insert({
+          ...basePayload,
+          created_by: user?.id ?? null,
+        } as never));
 
     if (error) {
       setSavingGallery(false);
-      setStatus(error.message);
+      setStatus(humanizeGalleryError(error.message));
       return;
     }
 
-    const savedItem = data as GalleryItem;
+    const galleryResult = await fetchGalleryItems(supabase);
 
-    setGalleryItems((current) =>
-      editingGalleryId ? current.map((item) => (item.id === savedItem.id ? savedItem : item)) : [savedItem, ...current],
-    );
-    setEditingGalleryId(savedItem.id);
-    setGalleryFormState(createGalleryFormState(savedItem));
+    if (galleryResult.error) {
+      setSavingGallery(false);
+      setStatus(humanizeGalleryError(galleryResult.error.message));
+      return;
+    }
+
+    const savedItem =
+      (editingGalleryId
+        ? galleryResult.items.find((item) => item.id === editingGalleryId)
+        : galleryResult.items.find(
+            (item) => item.title === basePayload.title && item.image_url === basePayload.image_url,
+          )) ?? null;
+
+    setGalleryItems(galleryResult.items);
+    if (savedItem) {
+      setEditingGalleryId(savedItem.id);
+      setGalleryFormState(createGalleryFormState(savedItem));
+    }
     setSavingGallery(false);
     setStatus(editingGalleryId ? "Gallery item updated." : "Gallery item added.");
   }
@@ -517,7 +586,7 @@ export function AdminDashboard() {
               />
             </label>
             <label className="text-sm text-[var(--berry)]">
-              Image URL
+              Cover image URL
               <input
                 required
                 value={galleryFormState.imageUrl}
@@ -525,6 +594,31 @@ export function AdminDashboard() {
                 placeholder="/store-products/your-image.png or https://..."
                 className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
               />
+            </label>
+            <label className="text-sm text-[var(--berry)]">
+              Upload gallery images
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleGalleryImageUpload}
+                className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+              />
+              <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
+                Upload one or more images. The first image becomes the main cover if the cover image field is still empty.
+              </span>
+            </label>
+            <label className="text-sm text-[var(--berry)]">
+              Extra gallery image URLs
+              <textarea
+                value={galleryFormState.galleryImages}
+                onChange={(event) => updateGalleryField("galleryImages", event.target.value)}
+                placeholder="https://.../gallery-1.jpg&#10;https://.../gallery-2.jpg"
+                className="mt-2 min-h-28 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
+              />
+              <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
+                Add one image URL per line if you want each gallery item to show multiple photos.
+              </span>
             </label>
             <label className="text-sm text-[var(--berry)]">
               Caption
@@ -543,8 +637,14 @@ export function AdminDashboard() {
               Feature this gallery item
             </label>
             <div className="flex flex-wrap gap-3">
-              <button type="submit" className="button-primary" disabled={savingGallery}>
-                {savingGallery ? "Saving gallery item..." : editingGalleryId ? "Save gallery changes" : "Add gallery item"}
+              <button type="submit" className="button-primary" disabled={savingGallery || uploadingGalleryImages}>
+                {savingGallery
+                  ? "Saving gallery item..."
+                  : uploadingGalleryImages
+                    ? "Uploading gallery images..."
+                    : editingGalleryId
+                      ? "Save gallery changes"
+                      : "Add gallery item"}
               </button>
               <button type="button" className="button-secondary" onClick={startNewGalleryItem}>
                 Clear form
@@ -565,47 +665,68 @@ export function AdminDashboard() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {sortedGalleryItems.length ? (
-              sortedGalleryItems.map((item) => (
-                <article
-                  key={item.id}
-                  className={`overflow-hidden rounded-[1.5rem] border bg-white/80 ${
-                    editingGalleryId === item.id ? "border-[var(--rose)] shadow-sm" : "border-[var(--line)]"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.image_url} alt={item.title} className="h-44 w-full object-cover" />
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-bold text-[var(--berry)]">{item.title}</p>
-                        {item.category ? <p className="text-sm text-[var(--mauve)]">{item.category}</p> : null}
-                      </div>
-                      {item.featured ? (
-                        <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rose-deep)]">
-                          Featured
+              sortedGalleryItems.map((item) => {
+                const galleryImages = getGalleryImages(item);
+
+                return (
+                  <article
+                    key={item.id}
+                    className={`overflow-hidden rounded-[1.5rem] border bg-white/80 ${
+                      editingGalleryId === item.id ? "border-[var(--rose)] shadow-sm" : "border-[var(--line)]"
+                    }`}
+                  >
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={galleryImages[0] || item.image_url} alt={item.title} className="h-44 w-full object-cover" />
+                      {galleryImages.length > 1 ? (
+                        <span className="absolute right-3 top-3 rounded-full bg-[rgba(98,54,77,0.78)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white">
+                          {galleryImages.length} photos
                         </span>
                       ) : null}
                     </div>
-                    {item.caption ? <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">{item.caption}</p> : null}
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="button-secondary px-4 py-2 text-sm"
-                        onClick={() => editGalleryItem(item)}
-                      >
-                        Edit item
-                      </button>
-                      <button
-                        type="button"
-                        className="button-secondary px-4 py-2 text-sm"
-                        onClick={() => deleteGalleryItem(item.id)}
-                      >
-                        Delete
-                      </button>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-[var(--berry)]">{item.title}</p>
+                          {item.category ? <p className="text-sm text-[var(--mauve)]">{item.category}</p> : null}
+                        </div>
+                        {item.featured ? (
+                          <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rose-deep)]">
+                            Featured
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.caption ? <p className="mt-2 text-sm leading-7 text-[var(--mauve)]">{item.caption}</p> : null}
+                      {galleryImages.length > 1 ? (
+                        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                          {galleryImages.map((image, index) => (
+                            <div key={`${item.id}-thumb-${index}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-[0.8rem] border border-[var(--line)]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={image} alt={`${item.title} preview ${index + 1}`} className="h-full w-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="button-secondary px-4 py-2 text-sm"
+                          onClick={() => editGalleryItem(item)}
+                        >
+                          Edit item
+                        </button>
+                        <button
+                          type="button"
+                          className="button-secondary px-4 py-2 text-sm"
+                          onClick={() => deleteGalleryItem(item.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))
+                  </article>
+                );
+              })
             ) : (
               <p className="text-sm text-[var(--mauve)]">No gallery items added yet.</p>
             )}

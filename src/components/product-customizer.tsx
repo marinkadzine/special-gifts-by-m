@@ -3,7 +3,15 @@
 import { ChangeEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Product, UploadedReference } from "@/types/store";
-import { calculateLineItemTotal, calculateVinylPrice, formatCurrency } from "@/lib/pricing";
+import {
+  calculateLineItemTotal,
+  calculateVinylPrice,
+  formatCurrency,
+  getConfiguredBasePrice,
+  getOptionValuePrice,
+  getRequiredPricedOptionGroups,
+  VINYL_PRICE_PER_SQUARE_CM,
+} from "@/lib/pricing";
 import { uploadReferenceFiles } from "@/lib/supabase";
 import { useCart } from "@/components/cart-provider";
 
@@ -21,11 +29,14 @@ export function ProductCustomizer({ product }: { product: Product }) {
   const [vinylHeight, setVinylHeight] = useState(10);
 
   const selectedPrint = product.printSizes?.find((option) => option.label === printSize);
+  const configuredBasePrice = getConfiguredBasePrice(product, selectedOptions);
+  const missingPricedOptionGroup = getRequiredPricedOptionGroups(product).find((groupLabel) => !selectedOptions[groupLabel]);
   const vinylPrice = product.supportsCustomVinyl ? calculateVinylPrice(vinylWidth, vinylHeight) : 0;
-  const lineTotal = calculateLineItemTotal(product, selectedPrint?.price ?? 0, vinylPrice);
+  const lineTotal = calculateLineItemTotal(configuredBasePrice, selectedPrint?.price ?? 0, vinylPrice);
 
   function toggleOption(label: string, value: string) {
     setSelectedOptions((current) => ({ ...current, [label]: value }));
+    setUploadStatus("");
   }
 
   async function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -55,6 +66,11 @@ export function ProductCustomizer({ product }: { product: Product }) {
   }
 
   function handleAddToCart() {
+    if (missingPricedOptionGroup) {
+      setUploadStatus(`Please choose a ${missingPricedOptionGroup.toLowerCase()} before adding this item.`);
+      return;
+    }
+
     if (product.storeSection === "personalized" && !referenceFiles.length) {
       setUploadStatus("Please upload at least one logo, photo, or design reference before adding this item.");
       return;
@@ -75,7 +91,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
       name: product.name,
       category: product.category,
       storeSection: product.storeSection,
-      basePrice: product.basePrice,
+      basePrice: configuredBasePrice,
       totalPrice: lineTotal,
       quantity,
       size: selectedSize,
@@ -117,6 +133,7 @@ export function ProductCustomizer({ product }: { product: Product }) {
             <div className="flex flex-wrap gap-2">
               {group.values.map((value) => {
                 const active = selectedOptions[group.label] === value;
+                const optionPrice = getOptionValuePrice(product, group.label, value);
                 return (
                   <button
                     key={value}
@@ -128,11 +145,21 @@ export function ProductCustomizer({ product }: { product: Product }) {
                         : "border border-[var(--line)] bg-white/80 text-[var(--berry)]"
                     }`}
                   >
-                    {value}
+                    <span className="block">{value}</span>
+                    {typeof optionPrice === "number" ? (
+                      <span className={`block text-xs ${active ? "text-white/80" : "text-[var(--mauve)]"}`}>
+                        {formatCurrency(optionPrice)}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
             </div>
+            {group.label === "Size" && product.slug === "photo-stone-slab" ? (
+              <p className="mt-3 text-sm text-[var(--mauve)]">
+                Each stone slab size has its own price. Choose the size above to update the live total.
+              </p>
+            ) : null}
           </div>
         ))}
 
@@ -194,8 +221,8 @@ export function ProductCustomizer({ product }: { product: Product }) {
               </label>
             </div>
             <p className="mt-3 text-sm text-[var(--mauve)]">
-              Live estimate: {formatCurrency(vinylPrice)} based on the current width x height x R3
-              pricing rule.
+              Live estimate: {formatCurrency(vinylPrice)} based on {formatCurrency(VINYL_PRICE_PER_SQUARE_CM)} per
+              square cm, with a minimum size of 5 cm x 5 cm.
             </p>
           </div>
         ) : null}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { fetchGalleryItems, getGalleryImages } from "@/lib/gallery-items";
 import { getBrowserSupabaseClient } from "@/lib/supabase";
 import { GalleryItem } from "@/types/store";
 
@@ -14,6 +15,54 @@ type GallerySectionProps = {
   emptyMessage?: string;
   showViewAllLink?: boolean;
 };
+
+function GalleryCard({ item }: { item: GalleryItem }) {
+  const galleryImages = getGalleryImages(item);
+  const [activeImage, setActiveImage] = useState(galleryImages[0] ?? item.image_url);
+
+  return (
+    <article className="glass overflow-hidden rounded-[2rem]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={activeImage} alt={item.title} className="h-64 w-full object-cover" />
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-3xl text-[var(--berry)]">{item.title}</p>
+            {item.category ? <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--mauve)]">{item.category}</p> : null}
+          </div>
+          {galleryImages.length > 1 ? (
+            <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-[var(--rose-deep)]">
+              {galleryImages.length} photos
+            </span>
+          ) : null}
+        </div>
+        {item.caption ? <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">{item.caption}</p> : null}
+        {galleryImages.length > 1 ? (
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {galleryImages.map((image, index) => {
+              const active = image === activeImage;
+
+              return (
+                <button
+                  key={`${item.id}-gallery-${index}`}
+                  type="button"
+                  onClick={() => setActiveImage(image)}
+                  className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-[0.95rem] border ${
+                    active ? "border-[var(--rose)] shadow-sm" : "border-[var(--line)]"
+                  }`}
+                  aria-label={`Show ${item.title} image ${index + 1}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt={`${item.title} preview ${index + 1}`} className="h-full w-full object-cover" />
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
 
 export function GallerySection({
   limit = 6,
@@ -34,22 +83,11 @@ export function GallerySection({
         return;
       }
 
-      let query = supabase
-        .from("gallery_items")
-        .select("id, title, category, image_url, caption, featured, created_at")
-        .order("featured", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (typeof limit === "number") {
-        query = query.limit(limit);
-      }
-
-      const { data } = await query;
-
-      setItems((data as GalleryItem[] | null) ?? []);
+      const { items: galleryItems } = await fetchGalleryItems(supabase, limit);
+      setItems(galleryItems);
     }
 
-    loadGallery();
+    void loadGallery();
   }, [limit]);
 
   return (
@@ -70,17 +108,7 @@ export function GallerySection({
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {items.length ? (
-          items.map((item) => (
-            <article key={item.id} className="glass overflow-hidden rounded-[2rem]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.image_url} alt={item.title} className="h-64 w-full object-cover" />
-              <div className="p-5">
-                <p className="font-display text-3xl text-[var(--berry)]">{item.title}</p>
-                {item.category ? <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--mauve)]">{item.category}</p> : null}
-                {item.caption ? <p className="mt-3 text-sm leading-7 text-[var(--mauve)]">{item.caption}</p> : null}
-              </div>
-            </article>
-          ))
+          items.map((item) => <GalleryCard key={`${item.id}-${getGalleryImages(item).join("|")}`} item={item} />)
         ) : (
           <div className="glass rounded-[2rem] p-6 text-sm leading-7 text-[var(--mauve)]">
             {emptyMessage}

@@ -3,33 +3,44 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+const bannerHighlights = [
+  "Stone slab sizes now price individually",
+  "Vinyl stickers calculate live by size",
+  "Gift wrap is chosen at checkout",
+  "PUDO and Pick Up stay available",
+  "Gallery showcases multiple photos per item",
+];
+
 const slides = [
   {
-    eyebrow: "Specials",
-    title: "Thoughtful gifts, custom printing, and gifting support in one store.",
+    eyebrow: "This Week's Specials",
+    title: "Stone slabs, stickers, and gifting extras now update more clearly as customers build an order.",
     description:
-      "Shop apparel, drinkware, decor, and branded essentials from one soft, gift-ready storefront.",
+      "Customers can see size-based stone slab pricing, live vinyl sticker estimates, and a cleaner path into checkout without extra option clutter.",
     ctaLabel: "Shop Personalized",
     ctaHref: "#store-personalized",
-    accent: "from-[rgba(255,79,163,0.22)] to-[rgba(199,154,178,0.32)]",
+    accent: "from-[rgba(255,79,163,0.18)] via-[rgba(246,209,220,0.6)] to-[rgba(255,255,255,0.28)]",
+    spotlight: ["Stone slab sizing now starts at R120 and steps up by size.", "Vinyl sticker pricing still updates live from the entered measurements."],
   },
   {
-    eyebrow: "Lead Time",
-    title: "Made to order with care, with a typical lead time of around 7 days.",
+    eyebrow: "Gift-Ready Flow",
+    title: "Customers can move from browsing into wrapping, delivery choice, and payment without leaving the app flow.",
     description:
-      "Customers can request a callback, upload artwork, and agree to the lead-time terms before checkout.",
-    ctaLabel: "Read Before Checkout",
+      "The specials banner keeps the important points visible while customers decide whether they want PUDO, Pick Up, custom artwork, or wrapped gifts.",
+    ctaLabel: "Go To Checkout",
     ctaHref: "/checkout",
-    accent: "from-[rgba(246,209,220,0.58)] to-[rgba(233,175,194,0.36)]",
+    accent: "from-[rgba(255,255,255,0.72)] via-[rgba(239,191,208,0.44)] to-[rgba(185,135,162,0.26)]",
+    spotlight: ["Gift wrapping is chosen later so customers can decide item by item.", "Delivery stays flexible with PUDO or Pick Up options."],
   },
   {
-    eyebrow: "Gift-Ready",
-    title: "Browse ready-made picks and personalized items in separate store sections.",
+    eyebrow: "Showcase More",
+    title: "Previous work can now tell a fuller story with multiple gallery images inside one gallery item.",
     description:
-      "Featured products, gifting support, wishlist saving, and customer accounts all work together in one flow.",
-    ctaLabel: "Shop Ready-Made",
-    ctaHref: "#store-ready-made",
-    accent: "from-[rgba(255,255,255,0.62)] to-[rgba(199,154,178,0.28)]",
+      "Admins can upload or paste more than one image for the same finished job, which gives customers a better look at real work before they order.",
+    ctaLabel: "View Gallery",
+    ctaHref: "/gallery",
+    accent: "from-[rgba(255,239,245,0.85)] via-[rgba(246,209,220,0.52)] to-[rgba(201,154,178,0.24)]",
+    spotlight: ["Gallery cards can switch between multiple photos.", "Featured work now feels closer to a real portfolio showcase."],
   },
 ];
 
@@ -39,42 +50,49 @@ export function SpecialsSlider() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
-    }, 4800);
+    }, 4600);
 
     return () => window.clearInterval(timer);
   }, []);
 
   const activeSlide = slides[activeIndex];
+  const loopingHighlights = [...bannerHighlights, ...bannerHighlights];
 
   return (
     <section className="shell">
-      <div className={`glass relative overflow-hidden rounded-[2rem] p-6 md:p-8`}>
+      <div className="glass relative overflow-hidden rounded-[2rem]">
         <div className={`absolute inset-0 bg-gradient-to-br ${activeSlide.accent}`} />
-        <div className="relative z-10 grid gap-6 md:grid-cols-[1.15fr_0.85fr] md:items-end">
+        <div className="relative z-10 border-b border-white/35 bg-white/48 px-4 py-3 md:px-6">
+          <div className="marquee-track">
+            {loopingHighlights.map((highlight, index) => (
+              <p key={`${highlight}-${index}`} className="marquee-copy text-xs font-extrabold uppercase tracking-[0.24em] text-[var(--berry)]">
+                {highlight}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10 grid gap-6 p-6 md:grid-cols-[1.15fr_0.85fr] md:items-end md:p-8">
           <div className="fade-up">
-            <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">
-              {activeSlide.eyebrow}
-            </p>
-            <h2 className="mt-3 font-display text-4xl text-[var(--berry)] md:text-6xl">
-              {activeSlide.title}
-            </h2>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--berry)]/80">
-              {activeSlide.description}
-            </p>
-            <Link href={activeSlide.ctaHref} className="button-primary mt-6 inline-flex">
-              {activeSlide.ctaLabel}
-            </Link>
+            <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-[var(--mauve)]">{activeSlide.eyebrow}</p>
+            <h2 className="mt-3 font-display text-4xl text-[var(--berry)] md:text-6xl">{activeSlide.title}</h2>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--berry)]/85">{activeSlide.description}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href={activeSlide.ctaHref} className="button-primary">
+                {activeSlide.ctaLabel}
+              </Link>
+              <Link href="/download" className="button-secondary">
+                Download the app
+              </Link>
+            </div>
           </div>
 
           <div className="rounded-[1.5rem] bg-white/78 p-5">
-            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">
-              What customers can do
-            </p>
+            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-[var(--mauve)]">Why this matters</p>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--berry)]">
-              <li>Sign up, log in, save a wishlist, and place orders.</li>
-              <li>Upload logos or photos before checkout.</li>
-              <li>Choose PUDO or collection at checkout.</li>
-              <li>Use the callback form when help is needed.</li>
+              {activeSlide.spotlight.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
             <div className="mt-5 flex gap-2">
               {slides.map((slide, index) => (

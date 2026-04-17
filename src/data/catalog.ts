@@ -236,7 +236,6 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     supportsCustomVinyl: true,
     supportsGiftWrap: false,
     badges: ["Custom Size"],
-    variantOptions: [{ label: "Finish", values: ["Standard Vinyl", "Gloss", "Matte"] }],
   },
   {
     id: "waterproof-a4-sticker-sheet",
@@ -256,7 +255,7 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     category: "Decor",
     basePrice: 120,
     description: "High-quality stone surface for photo printing, designed as a premium and long-lasting display piece.",
-    summary: "Starts at R120 with size-based pricing up to R140.",
+    summary: "Size pricing: 120x220 R120 | 150x150 R130 | 150x200 R135 | 200x200 R140.",
     leadTime: "3-5 business days",
     image: stoneSlabGallery[0],
     galleryImages: stoneSlabGallery,
@@ -689,6 +688,14 @@ function normalizeVariantOptions(value: unknown) {
     .filter((entry): entry is ProductOptionGroup => Boolean(entry));
 }
 
+function resolveVariantOptions(slug: string, variantOptions?: ProductOptionGroup[]) {
+  if (slug === "custom-vinyl-sticker") {
+    return [];
+  }
+
+  return variantOptions;
+}
+
 function normalizePrintSizes(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
@@ -738,7 +745,7 @@ function createProductFromRecord(record: ProductRecord): Product {
     badges: normalizeStringArray(record.badges),
     image,
     galleryImages: galleryImages.length ? galleryImages : image ? [image] : undefined,
-    variantOptions: normalizeVariantOptions(record.variant_options),
+    variantOptions: resolveVariantOptions(record.slug, normalizeVariantOptions(record.variant_options)),
     printSizes: normalizePrintSizes(record.print_sizes),
     supportsCustomVinyl: record.supports_custom_vinyl,
     supportsGiftWrap: record.supports_gift_wrap,
@@ -751,7 +758,7 @@ function mergeProductWithRecord(product: Product, record: ProductRecord): Produc
     : normalizeStringArray(record.gallery_images);
   const variantOptions = record.variant_options === null || record.variant_options === undefined
     ? product.variantOptions
-    : normalizeVariantOptions(record.variant_options);
+    : resolveVariantOptions(product.slug, normalizeVariantOptions(record.variant_options));
   const resolvedPrintSizes = record.print_sizes === null || record.print_sizes === undefined
     ? product.printSizes
     : normalizePrintSizes(record.print_sizes);
@@ -777,7 +784,7 @@ function mergeProductWithRecord(product: Product, record: ProductRecord): Produc
     badges,
     image,
     galleryImages,
-    variantOptions,
+    variantOptions: resolveVariantOptions(product.slug, variantOptions),
     printSizes: resolvedPrintSizes,
     supportsCustomVinyl: record.supports_custom_vinyl,
     supportsGiftWrap: record.supports_gift_wrap,

@@ -172,6 +172,9 @@ create table if not exists public.gallery_items (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.gallery_items
+  add column if not exists gallery_images jsonb;
+
 create table if not exists public.reviews (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid references auth.users on delete set null,
@@ -193,6 +196,13 @@ set
 
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('profile-images', 'profile-images', true, 5242880)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('gallery-images', 'gallery-images', true, 10485760)
 on conflict (id) do update
 set
   public = excluded.public,
@@ -299,6 +309,20 @@ on storage.objects
 for select
 to anon, authenticated
 using (bucket_id = 'profile-images');
+
+drop policy if exists "Admins can upload gallery images" on storage.objects;
+create policy "Admins can upload gallery images"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'gallery-images' and public.is_admin());
+
+drop policy if exists "Public can read gallery images" on storage.objects;
+create policy "Public can read gallery images"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'gallery-images');
 
 drop policy if exists "Public can read products" on public.products;
 create policy "Public can read products"
