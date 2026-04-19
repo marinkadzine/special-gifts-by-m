@@ -388,8 +388,8 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     name: "Socks",
     category: "Accessories",
     basePrice: 72,
-    description: "Custom-printed socks available in short (25cm) ankle length or long (40cm) length. Perfect for gifting, teams, and personalized keepsakes.",
-    summary: "Short socks R72 | Long socks R75. Choose your length variant.",
+    description: "Custom-printed socks in short (25cm) ankle length, perfect for gifting, teams, and personalized keepsakes.",
+    summary: "Short printed socks (25cm) for easy gifting and everyday branded wear.",
     leadTime: "3-5 business days",
     image: "/store-products/accessories_socks_short_25cm.png",
     galleryImages: [
@@ -400,7 +400,7 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     variantOptions: [
       {
         label: "Length",
-        values: ["Short Socks (25cm) – R72", "Long Socks (40cm) – R75"],
+        values: ["Short Socks (25cm)"],
       },
     ],
   },
