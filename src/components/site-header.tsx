@@ -205,6 +205,12 @@ export function SiteHeader() {
                   </div>
                 ) : null}
               </div>
+              <Link href="/wishlist" className="button-secondary px-4 py-3 text-sm">
+                Wishlist{wishlistCount ? ` (${wishlistCount})` : ""}
+              </Link>
+              <Link href="/checkout" className="button-secondary px-4 py-3 text-sm">
+                Cart / Checkout{count ? ` (${count})` : ""}
+              </Link>
               <Link href={isAdmin ? "/admin" : "/account"} className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-sm">
                 {profile?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -221,12 +227,6 @@ export function SiteHeader() {
                 <span className="hidden max-w-32 truncate text-sm font-bold text-[var(--berry)] md:block">
                   {profileLabel}
                 </span>
-              </Link>
-              <Link href="/wishlist" className="button-secondary px-4 py-3 text-sm">
-                Wishlist{wishlistCount ? ` (${wishlistCount})` : ""}
-              </Link>
-              <Link href="/checkout" className="button-secondary px-4 py-3 text-sm">
-                Cart / Checkout{count ? ` (${count})` : ""}
               </Link>
 
               <div className="relative">
