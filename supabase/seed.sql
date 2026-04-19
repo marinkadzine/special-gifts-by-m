@@ -33,8 +33,8 @@ values
     'Stickers',
     'personalized',
     0,
-    'Custom-cut vinyl sticker priced by custom dimensions for branding, labels, and decor.',
-    'Made-to-size vinyl sticker with live price calculation.',
+    'Custom-cut vinyl sticker priced by custom dimensions for branding, labels, and decor. Available in a wide range of vinyl colours.',
+    'Made-to-size vinyl sticker with live price calculation. Choose your vinyl colour.',
     '2-3 business days',
     true,
     false,
@@ -83,6 +83,34 @@ values
     false,
     true
   )
+  (
+    'custom-socks',
+    'Socks',
+    'Accessories',
+    'personalized',
+    72,
+    'Custom-printed socks available in short (25cm) ankle length or long (40cm) length. Perfect for gifting, teams, and personalized keepsakes.',
+    'Short socks R72 | Long socks R75. Choose your length variant.',
+    '3-5 business days',
+    false,
+    true,
+    false,
+    true
+  ),
+  (
+    'buddy-sippy-cup',
+    'Buddy Sippy Cup',
+    'Drinkware',
+    'ready-made',
+    170,
+    'Compact kids drinkware option for everyday use, nursery gifts, and custom keepsakes. Available in blue or pink.',
+    'Affordable baby and kids cup with personalization-ready printing. Choose blue or pink.',
+    '2-4 business days',
+    false,
+    true,
+    false,
+    true
+  ),
 on conflict (slug) do update
 set
   name = excluded.name,
