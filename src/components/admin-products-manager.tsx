@@ -406,6 +406,41 @@ export function AdminProductsManager() {
     }
   }
 
+  async function handleRemove(slug: string, name: string) {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      setStatus("Supabase is not connected, so items cannot be removed.");
+      return;
+    }
+
+    if (!window.confirm(`Remove "${name}" from the store permanently? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { error } = await supabase.from("products").delete().eq("slug", slug);
+
+      if (error) {
+        setStatus(`Could not remove item: ${error.message}`);
+        return;
+      }
+
+      if (editingSlug === slug) {
+        setEditingSlug("");
+        setFormState(EMPTY_PRODUCT_FORM);
+        syncEditorLocation();
+      }
+
+      refresh();
+      setHiddenProducts((current) => current.filter((p) => p.slug !== slug));
+      setStatus(`"${name}" has been removed from the store.`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
       <section id="store-item-editor" ref={formSectionRef} className="glass rounded-[2rem] p-6">
@@ -646,6 +681,14 @@ export function AdminProductsManager() {
                       >
                         Open item
                       </Link>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                        onClick={() => handleRemove(product.slug, product.name)}
+                      >
+                        Remove
+                      </button>
                       </div>
                     </div>
                   </div>
@@ -672,6 +715,7 @@ export function AdminProductsManager() {
                             </p>
                             <p className="mt-1 text-sm text-[var(--mauve)]">{product.slug}</p>
                           </div>
+                          <div className="flex flex-wrap gap-2">
                           <Link
                             href={`/admin?edit=${encodeURIComponent(product.slug)}#store-item-editor`}
                             className="button-secondary px-4 py-2 text-sm"
@@ -679,6 +723,15 @@ export function AdminProductsManager() {
                           >
                             Open editor
                           </Link>
+                          <button
+                            type="button"
+                            disabled={saving}
+                            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                            onClick={() => handleRemove(product.slug, product.name)}
+                          >
+                            Remove
+                          </button>
+                          </div>
                         </div>
                       </article>
                     ))}
