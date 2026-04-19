@@ -253,12 +253,18 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     basePrice: 0,
     featured: true,
     description:
-      "Custom-cut vinyl sticker priced by custom dimensions for branding, labels, and decor.",
-    summary: "Made-to-size vinyl sticker with live price calculation.",
+      "Custom-cut vinyl sticker priced by custom dimensions for branding, labels, and decor. Available in a wide range of vinyl colours.",
+    summary: "Made-to-size vinyl sticker with live price calculation. Choose your vinyl colour.",
     leadTime: "2-3 business days",
     supportsCustomVinyl: true,
     supportsGiftWrap: false,
     badges: ["Custom Size"],
+    variantOptions: [
+      {
+        label: "Vinyl Colour",
+        values: ["Black", "White", "Yellow", "Blue", "Red", "Silver", "Rose Gold", "Gold", "Green"],
+      },
+    ],
   },
   {
     id: "waterproof-a4-sticker-sheet",
@@ -377,30 +383,26 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     galleryImages: ["/store-products/accessories_lanyard.png"],
   },
   {
-    id: "long-socks",
-    slug: "custom-long-socks",
-    name: "Long Socks (40cm)",
-    category: "Accessories",
-    basePrice: 75,
-    description: "Comfortable long-length socks suitable for custom prints, gifting, and promotional use.",
-    summary: "Printed long socks for teams, events, and personalized gift sets.",
-    leadTime: "3-5 business days",
-    image: "/store-products/accessories_socks_long_40cm.png",
-    galleryImages: ["/store-products/accessories_socks_long_40cm.png"],
-    supportsGiftWrap: true,
-  },
-  {
-    id: "short-socks",
-    slug: "custom-short-socks",
-    name: "Short Socks (25cm)",
+    id: "socks",
+    slug: "custom-socks",
+    name: "Socks",
     category: "Accessories",
     basePrice: 72,
-    description: "Ankle-length socks designed for everyday comfort with optional custom branding.",
-    summary: "Short printed socks for easy gifting and everyday branded wear.",
+    description: "Custom-printed socks available in short (25cm) ankle length or long (40cm) length. Perfect for gifting, teams, and personalized keepsakes.",
+    summary: "Short socks R72 | Long socks R75. Choose your length variant.",
     leadTime: "3-5 business days",
     image: "/store-products/accessories_socks_short_25cm.png",
-    galleryImages: ["/store-products/accessories_socks_short_25cm.png"],
+    galleryImages: [
+      "/store-products/accessories_socks_short_25cm.png",
+      "/store-products/accessories_socks_long_40cm.png",
+    ],
     supportsGiftWrap: true,
+    variantOptions: [
+      {
+        label: "Length",
+        values: ["Short Socks (25cm) – R72", "Long Socks (40cm) – R75"],
+      },
+    ],
   },
   {
     id: "mousepad",
@@ -800,10 +802,13 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     name: "Buddy Sippy Cup",
     category: "Drinkware",
     basePrice: 170,
-    description: "Compact kids drinkware option for everyday use, nursery gifts, and custom keepsakes.",
-    summary: "Affordable baby and kids cup with personalization-ready printing.",
+    description: "Compact kids drinkware option for everyday use, nursery gifts, and custom keepsakes. Available in blue or pink.",
+    summary: "Affordable baby and kids cup with personalization-ready printing. Choose blue or pink.",
     leadTime: "2-4 business days",
     supportsGiftWrap: true,
+    variantOptions: [
+      { label: "Colour", values: ["Blue", "Pink"] },
+    ],
   },
   {
     id: "business-cards-minimalist",
@@ -937,10 +942,6 @@ function normalizeVariantOptions(value: unknown) {
 }
 
 function resolveVariantOptions(slug: string, variantOptions?: ProductOptionGroup[]) {
-  if (slug === "custom-vinyl-sticker") {
-    return [];
-  }
-
   return variantOptions;
 }
 
