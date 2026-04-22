@@ -102,6 +102,32 @@ export async function uploadGalleryImages(files: File[], galleryFolder: string) 
   return uploadedFiles;
 }
 
+export async function uploadProductImages(files: File[], productFolder: string) {
+  const supabase = getBrowserSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const uploadedFiles = await Promise.all(
+    files.map(async (file) => {
+      const filePath = `products/${productFolder}/${Date.now()}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+      const { error } = await supabase.storage.from("gallery-images").upload(filePath, file, {
+        upsert: false,
+      });
+
+      if (error) {
+        throw new Error(humanizeStorageError(error.message, file.name, "gallery-images"));
+      }
+
+      const { data } = supabase.storage.from("gallery-images").getPublicUrl(filePath);
+      return data.publicUrl;
+    }),
+  );
+
+  return uploadedFiles;
+}
+
 export async function uploadProfileImage(file: File, userId: string) {
   const supabase = getBrowserSupabaseClient();
 

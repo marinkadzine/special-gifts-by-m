@@ -1,6 +1,7 @@
 export type ProductOptionGroup = {
   label: string;
   values: string[];
+  prices?: ProductOptionPriceMap;
 };
 
 export type ProductOptionPriceMap = Record<string, number>;

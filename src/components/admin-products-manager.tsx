@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { getStoreSectionLabel } from "@/lib/store-navigation";
-import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { getBrowserSupabaseClient, uploadProductImages } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/pricing";
-import { Product, ProductOptionGroup, PrintSizeOption, ProductRecord, StoreSection } from "@/types/store";
+import { Product, ProductOptionGroup, ProductOptionPriceMap, PrintSizeOption, ProductRecord, StoreSection } from "@/types/store";
 
 type ProductFormState = {
   slug: string;
@@ -21,7 +21,7 @@ type ProductFormState = {
   imageUrl: string;
   galleryImages: string;
   badges: string;
-  variantOptions: string;
+  variantOptions: ProductOptionGroup[];
   printSizes: string;
   featured: boolean;
   supportsGiftWrap: boolean;
@@ -41,7 +41,7 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   imageUrl: "",
   galleryImages: "",
   badges: "",
-  variantOptions: "",
+  variantOptions: [],
   printSizes: "",
   featured: false,
   supportsGiftWrap: false,
@@ -53,8 +53,21 @@ function isCustomVinylStickerSlug(slug: string) {
   return slug.trim().toLowerCase() === "custom-vinyl-sticker";
 }
 
-function formatOptionGroups(optionGroups?: ProductOptionGroup[]) {
-  return optionGroups?.length ? JSON.stringify(optionGroups, null, 2) : "";
+function createEmptyVariantOptionGroup(): ProductOptionGroup {
+  return {
+    label: "",
+    values: [""],
+  };
+}
+
+function cloneOptionGroups(optionGroups?: ProductOptionGroup[]) {
+  return (
+    optionGroups?.map((group) => ({
+      label: group.label,
+      values: [...group.values],
+      ...(group.prices ? { prices: { ...group.prices } } : {}),
+    })) ?? []
+  );
 }
 
 function formatPrintSizes(printSizes?: PrintSizeOption[]) {
@@ -78,7 +91,7 @@ function createFormState(product?: Product): ProductFormState {
     imageUrl: product.image ?? "",
     galleryImages: product.galleryImages?.join("\n") ?? "",
     badges: product.badges?.join(", ") ?? "",
-    variantOptions: isCustomVinylStickerSlug(product.slug) ? "" : formatOptionGroups(product.variantOptions),
+    variantOptions: isCustomVinylStickerSlug(product.slug) ? [] : cloneOptionGroups(product.variantOptions),
     printSizes: formatPrintSizes(product.printSizes),
     featured: Boolean(product.featured),
     supportsGiftWrap: Boolean(product.supportsGiftWrap),
@@ -101,8 +114,8 @@ function createFormStateFromRecord(record: ProductRecord): ProductFormState {
     galleryImages: Array.isArray(record.gallery_images) ? record.gallery_images.map((entry) => String(entry)).join("\n") : "",
     badges: Array.isArray(record.badges) ? record.badges.map((entry) => String(entry)).join(", ") : "",
     variantOptions: isCustomVinylStickerSlug(record.slug)
-      ? ""
-      : formatOptionGroups(Array.isArray(record.variant_options) ? (record.variant_options as ProductOptionGroup[]) : undefined),
+      ? []
+      : cloneOptionGroups(Array.isArray(record.variant_options) ? (record.variant_options as ProductOptionGroup[]) : undefined),
     printSizes: formatPrintSizes(Array.isArray(record.print_sizes) ? (record.print_sizes as PrintSizeOption[]) : undefined),
     featured: Boolean(record.featured),
     supportsGiftWrap: Boolean(record.supports_gift_wrap),
@@ -125,46 +138,58 @@ function parseCommaList(value: string) {
     .filter(Boolean);
 }
 
-function parseVariantOptions(value: string) {
-  if (!value.trim()) {
+function buildGalleryImageList(imageUrl: string, galleryImagesText: string) {
+  return Array.from(new Set([imageUrl.trim(), ...parseLineList(galleryImagesText)].filter(Boolean)));
+}
+
+function buildProductMediaFolderName(formState: ProductFormState, editingSlug: string) {
+  return (
+    formState.slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") ||
+    formState.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") ||
+    editingSlug ||
+    "store-item"
+  );
+}
+
+function parseVariantOptions(optionGroups: ProductOptionGroup[]) {
+  if (!optionGroups.length) {
     return null;
   }
 
-  const parsed = JSON.parse(value) as unknown;
+  const sanitizedGroups = optionGroups.flatMap((group) => {
+    const label = group.label.trim();
+    const values = group.values.map((value) => value.trim()).filter(Boolean);
 
-  if (!Array.isArray(parsed)) {
-    throw new Error("Variant options must be a JSON array.");
-  }
-
-  const optionGroups = parsed.map((entry) => {
-    if (!entry || typeof entry !== "object") {
-      throw new Error("Each variant option must be an object with label and values.");
+    if (!label && !values.length) {
+      return [];
     }
-
-    const option = entry as { label?: unknown; values?: unknown };
-    const label = typeof option.label === "string" ? option.label.trim() : "";
 
     if (!label) {
       throw new Error("Each variant option needs a label.");
     }
 
-    if (!Array.isArray(option.values) || !option.values.length) {
-      throw new Error(`The variant option "${label}" needs at least one value.`);
-    }
-
-    const values = option.values.map((item) => String(item).trim()).filter(Boolean);
-
     if (!values.length) {
       throw new Error(`The variant option "${label}" needs at least one value.`);
     }
 
-    return {
-      label,
-      values,
-    } satisfies ProductOptionGroup;
+    const prices = Object.fromEntries(
+      Object.entries(group.prices ?? {})
+        .map(([value, rawPrice]) => [value.trim(), Number(rawPrice)] as const)
+        .filter(([value, rawPrice]) => value && Number.isFinite(rawPrice)),
+    ) as ProductOptionPriceMap;
+
+    const scopedPrices = Object.fromEntries(values.flatMap((value) => (value in prices ? [[value, prices[value]]] : [])));
+
+    return [
+      {
+        label,
+        values,
+        ...(Object.keys(scopedPrices).length ? { prices: scopedPrices } : {}),
+      } satisfies ProductOptionGroup,
+    ];
   });
 
-  return optionGroups;
+  return sanitizedGroups.length ? sanitizedGroups : null;
 }
 
 function parsePrintSizeLines(value: string) {
@@ -205,6 +230,10 @@ function humanizeSaveError(message: string) {
     return "The products table needs the latest Supabase schema before store updates can be saved. Please re-run supabase/schema.sql and try again.";
   }
 
+  if (normalized.includes("gallery-images")) {
+    return "The shared admin media bucket is missing or blocked. Please re-run supabase/schema.sql so uploads from your device can work.";
+  }
+
   return message;
 }
 
@@ -217,6 +246,8 @@ export function AdminProductsManager() {
   const [editingSlug, setEditingSlug] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadingCoverImage, setUploadingCoverImage] = useState(false);
+  const [uploadingGalleryImages, setUploadingGalleryImages] = useState(false);
   const [hiddenProducts, setHiddenProducts] = useState<ProductRecord[]>([]);
   const formSectionRef = useRef<HTMLElement | null>(null);
 
@@ -301,6 +332,127 @@ export function AdminProductsManager() {
     setFormState((current) => ({ ...current, [key]: value }));
   }
 
+  function updateVariantGroups(
+    updater: (current: ProductOptionGroup[]) => ProductOptionGroup[],
+  ) {
+    setFormState((current) => ({
+      ...current,
+      variantOptions: updater(current.variantOptions),
+    }));
+  }
+
+  function addVariantGroup() {
+    updateVariantGroups((current) => [...current, createEmptyVariantOptionGroup()]);
+  }
+
+  function removeVariantGroup(groupIndex: number) {
+    updateVariantGroups((current) => current.filter((_, index) => index !== groupIndex));
+  }
+
+  function updateVariantGroupLabel(groupIndex: number, value: string) {
+    updateVariantGroups((current) =>
+      current.map((group, index) =>
+        index === groupIndex
+          ? {
+              ...group,
+              label: value,
+            }
+          : group,
+      ),
+    );
+  }
+
+  function addVariantValue(groupIndex: number) {
+    updateVariantGroups((current) =>
+      current.map((group, index) =>
+        index === groupIndex
+          ? {
+              ...group,
+              values: [...group.values, ""],
+            }
+          : group,
+      ),
+    );
+  }
+
+  function removeVariantValue(groupIndex: number, valueIndex: number) {
+    updateVariantGroups((current) =>
+      current.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        const nextValues = group.values.filter((_, currentValueIndex) => currentValueIndex !== valueIndex);
+        const removedValue = group.values[valueIndex];
+        const nextPrices = { ...(group.prices ?? {}) };
+
+        if (removedValue) {
+          delete nextPrices[removedValue];
+        }
+
+        return {
+          ...group,
+          values: nextValues.length ? nextValues : [""],
+          ...(Object.keys(nextPrices).length ? { prices: nextPrices } : { prices: undefined }),
+        };
+      }),
+    );
+  }
+
+  function updateVariantValue(groupIndex: number, valueIndex: number, nextValue: string) {
+    updateVariantGroups((current) =>
+      current.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        const previousValue = group.values[valueIndex];
+        const nextValues = [...group.values];
+        nextValues[valueIndex] = nextValue;
+        const nextPrices = { ...(group.prices ?? {}) };
+
+        if (previousValue && previousValue !== nextValue && previousValue in nextPrices) {
+          nextPrices[nextValue] = nextPrices[previousValue];
+          delete nextPrices[previousValue];
+        }
+
+        return {
+          ...group,
+          values: nextValues,
+          ...(Object.keys(nextPrices).length ? { prices: nextPrices } : { prices: undefined }),
+        };
+      }),
+    );
+  }
+
+  function updateVariantPrice(groupIndex: number, value: string, priceText: string) {
+    updateVariantGroups((current) =>
+      current.map((group, index) => {
+        if (index !== groupIndex) {
+          return group;
+        }
+
+        const nextPrices = { ...(group.prices ?? {}) };
+        const normalizedValue = value.trim();
+
+        if (!normalizedValue) {
+          return group;
+        }
+
+        if (!priceText.trim()) {
+          delete nextPrices[normalizedValue];
+        } else {
+          nextPrices[normalizedValue] = Number(priceText);
+        }
+
+        return {
+          ...group,
+          ...(Object.keys(nextPrices).length ? { prices: nextPrices } : { prices: undefined }),
+        };
+      }),
+    );
+  }
+
   function focusEditor() {
     formSectionRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -330,6 +482,72 @@ export function AdminProductsManager() {
     setStatus(`Editing hidden item ${product.name}.`);
     syncEditorLocation(product.slug);
     focusEditor();
+  }
+
+  async function handleCoverImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const folderName = buildProductMediaFolderName(formState, editingSlug);
+    setUploadingCoverImage(true);
+    setStatus("Uploading cover image...");
+
+    try {
+      const [uploadedUrl] = await uploadProductImages([file], folderName);
+
+      if (!uploadedUrl) {
+        throw new Error("Could not create a public URL for the uploaded cover image.");
+      }
+
+      setFormState((current) => ({
+        ...current,
+        imageUrl: uploadedUrl,
+        galleryImages: parseLineList(current.galleryImages)
+          .filter((image) => image !== uploadedUrl)
+          .join("\n"),
+      }));
+      setStatus("Cover image uploaded.");
+      event.target.value = "";
+    } catch (error) {
+      setStatus(error instanceof Error ? humanizeSaveError(error.message) : "Could not upload the cover image.");
+    } finally {
+      setUploadingCoverImage(false);
+    }
+  }
+
+  async function handleGalleryImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (!files.length) {
+      return;
+    }
+
+    const folderName = buildProductMediaFolderName(formState, editingSlug);
+    setUploadingGalleryImages(true);
+    setStatus(`Uploading ${files.length} product image${files.length === 1 ? "" : "s"}...`);
+
+    try {
+      const uploadedUrls = await uploadProductImages(files, folderName);
+      const coverImage = formState.imageUrl.trim() || uploadedUrls[0] || "";
+      const nextGalleryImages = Array.from(
+        new Set([...parseLineList(formState.galleryImages), ...uploadedUrls].filter((image) => image !== coverImage)),
+      );
+
+      setFormState((current) => ({
+        ...current,
+        imageUrl: coverImage || current.imageUrl,
+        galleryImages: nextGalleryImages.join("\n"),
+      }));
+      setStatus(`${uploadedUrls.length} product image${uploadedUrls.length === 1 ? "" : "s"} uploaded.`);
+      event.target.value = "";
+    } catch (error) {
+      setStatus(error instanceof Error ? humanizeSaveError(error.message) : "Could not upload the product images.");
+    } finally {
+      setUploadingGalleryImages(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -370,7 +588,7 @@ export function AdminProductsManager() {
         supports_gift_wrap: formState.supportsGiftWrap,
         supports_custom_vinyl: formState.supportsCustomVinyl,
         image_url: formState.imageUrl.trim() || null,
-        gallery_images: parseLineList(formState.galleryImages),
+        gallery_images: buildGalleryImageList(formState.imageUrl, formState.galleryImages),
         badges: parseCommaList(formState.badges),
         variant_options: isCustomVinylStickerSlug(trimmedSlug) ? null : parseVariantOptions(formState.variantOptions),
         print_sizes: parsePrintSizeLines(formState.printSizes),
@@ -440,6 +658,9 @@ export function AdminProductsManager() {
       setSaving(false);
     }
   }
+
+  const uploadingMedia = uploadingCoverImage || uploadingGalleryImages;
+  const productMediaPreview = buildGalleryImageList(formState.imageUrl, formState.galleryImages);
 
   return (
     <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -529,16 +750,42 @@ export function AdminProductsManager() {
                 className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
               />
             </label>
-            <label className="text-sm text-[var(--berry)]">
-              Cover image URL
+            <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/80 p-4">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">Cover image</p>
               <input
                 value={formState.imageUrl}
                 onChange={(event) => updateField("imageUrl", event.target.value)}
                 placeholder="/store-products/item.png or https://..."
-                className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+                className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
               />
-            </label>
+              <label className="mt-3 block text-sm text-[var(--berry)]">
+                Upload from this device
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageUpload}
+                  className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+                />
+              </label>
+              <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
+                Paste a URL if you already have one, or upload directly from the phone or laptop the admin is using.
+              </span>
+            </div>
           </div>
+
+          {productMediaPreview.length ? (
+            <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/70 p-4">
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">Current media preview</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {productMediaPreview.map((image, index) => (
+                  <div key={`${image}-${index}`} className="overflow-hidden rounded-[1rem] border border-[var(--line)] bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image} alt={`${formState.name || "Product"} preview ${index + 1}`} className="h-24 w-24 object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <label className="text-sm text-[var(--berry)]">
             Summary
@@ -560,15 +807,31 @@ export function AdminProductsManager() {
             />
           </label>
 
-          <label className="text-sm text-[var(--berry)]">
-            Gallery image URLs
-            <textarea
-              value={formState.galleryImages}
-              onChange={(event) => updateField("galleryImages", event.target.value)}
-              placeholder="/store-products/item-1.png&#10;/store-products/item-2.png"
-              className="mt-2 min-h-24 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
-            />
-          </label>
+          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/80 p-4">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">Extra gallery media</p>
+            <label className="mt-3 block text-sm text-[var(--berry)]">
+              Upload one or more extra images
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleGalleryImageUpload}
+                className="mt-2 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3"
+              />
+            </label>
+            <label className="mt-4 block text-sm text-[var(--berry)]">
+              Extra image URLs
+              <textarea
+                value={formState.galleryImages}
+                onChange={(event) => updateField("galleryImages", event.target.value)}
+                placeholder="/store-products/item-1.png&#10;/store-products/item-2.png"
+                className="mt-2 min-h-24 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3"
+              />
+            </label>
+            <span className="mt-2 block text-xs leading-6 text-[var(--mauve)]">
+              Uploaded images are added automatically. You can still paste extra URLs if needed.
+            </span>
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="text-sm text-[var(--berry)]">
@@ -591,19 +854,90 @@ export function AdminProductsManager() {
             </label>
           </div>
 
-          <label className="text-sm text-[var(--berry)]">
-            Variant options JSON
-            <textarea
-              value={formState.variantOptions}
-              onChange={(event) => updateField("variantOptions", event.target.value)}
-              placeholder={
-                isCustomVinylStickerSlug(formState.slug)
-                  ? "Vinyl stickers now use only the live size calculator, so no extra finish options are needed here."
-                  : '[{"label":"Size","values":["S","M","L"]}]'
-              }
-              className="mt-2 min-h-36 w-full rounded-[1.5rem] border border-[var(--line)] bg-white px-4 py-3 font-mono text-xs"
-            />
-          </label>
+          <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/80 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-[var(--mauve)]">Variant options</p>
+                <p className="mt-1 text-xs leading-6 text-[var(--mauve)]">
+                  Add choices like Size, Colour, Sleeve, Long Socks, or Short Socks. Leave price blank if that option
+                  should keep the normal product price.
+                </p>
+              </div>
+              {!isCustomVinylStickerSlug(formState.slug) ? (
+                <button type="button" className="button-secondary px-4 py-2 text-sm" onClick={addVariantGroup}>
+                  Add option group
+                </button>
+              ) : null}
+            </div>
+
+            {isCustomVinylStickerSlug(formState.slug) ? (
+              <p className="mt-4 rounded-[1rem] bg-[var(--light-grey)] px-4 py-3 text-sm leading-7 text-[var(--berry)]">
+                Vinyl stickers now use the live size calculator, so no extra finish or option group is needed here.
+              </p>
+            ) : formState.variantOptions.length ? (
+              <div className="mt-4 space-y-4">
+                {formState.variantOptions.map((group, groupIndex) => (
+                  <div key={`variant-group-${groupIndex}`} className="rounded-[1.2rem] border border-[var(--line)] bg-white p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                      <input
+                        value={group.label}
+                        onChange={(event) => updateVariantGroupLabel(groupIndex, event.target.value)}
+                        placeholder="Option label, for example Size or Length"
+                        className="flex-1 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
+                      />
+                      <button
+                        type="button"
+                        className="button-secondary px-4 py-2 text-sm"
+                        onClick={() => removeVariantGroup(groupIndex)}
+                      >
+                        Remove group
+                      </button>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {group.values.map((value, valueIndex) => (
+                        <div key={`variant-value-${groupIndex}-${valueIndex}`} className="grid gap-3 md:grid-cols-[1.2fr_0.8fr_auto]">
+                          <input
+                            value={value}
+                            onChange={(event) => updateVariantValue(groupIndex, valueIndex, event.target.value)}
+                            placeholder="Option value, for example Long Socks (40cm)"
+                            className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
+                          />
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={value && group.prices?.[value] !== undefined ? String(group.prices[value]) : ""}
+                            onChange={(event) => updateVariantPrice(groupIndex, value, event.target.value)}
+                            placeholder="Optional price"
+                            className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
+                          />
+                          <button
+                            type="button"
+                            className="button-secondary px-4 py-2 text-sm"
+                            onClick={() => removeVariantValue(groupIndex, valueIndex)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="button-secondary mt-4 px-4 py-2 text-sm"
+                      onClick={() => addVariantValue(groupIndex)}
+                    >
+                      Add value
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-[1rem] bg-[var(--light-grey)] px-4 py-3 text-sm leading-7 text-[var(--berry)]">
+                No variant groups added yet. Use the button above for choices like Size, Colour, Sleeve, Shape, or
+                Socks length.
+              </p>
+            )}
+          </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
             <label className="flex items-center gap-3 rounded-[1rem] border border-[var(--line)] bg-white/80 px-4 py-3 text-sm font-bold text-[var(--berry)]">
@@ -625,8 +959,8 @@ export function AdminProductsManager() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button type="submit" className="button-primary" disabled={saving}>
-              {saving ? "Saving item..." : editingSlug ? "Save changes" : "Add item to store"}
+            <button type="submit" className="button-primary" disabled={saving || uploadingMedia}>
+              {saving ? "Saving item..." : uploadingMedia ? "Uploading media..." : editingSlug ? "Save changes" : "Add item to store"}
             </button>
             <button type="button" className="button-secondary" onClick={startNewProduct}>
               Clear form
@@ -711,7 +1045,7 @@ export function AdminProductsManager() {
                           <div>
                             <p className="font-bold text-[var(--berry)]">{product.name}</p>
                             <p className="text-sm text-[var(--mauve)]">
-                              {product.category} | {product.store_section ?? "personalized"}
+                              {product.category} | {getStoreSectionLabel(product.store_section ?? "personalized")}
                             </p>
                             <p className="mt-1 text-sm text-[var(--mauve)]">{product.slug}</p>
                           </div>

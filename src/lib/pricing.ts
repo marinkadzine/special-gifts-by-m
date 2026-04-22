@@ -1,4 +1,4 @@
-import { CartItem, DeliveryOption, Product, PudoLockerSize } from "@/types/store";
+import { CartItem, DeliveryOption, Product, ProductOptionGroup, PudoLockerSize } from "@/types/store";
 
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-ZA", {
@@ -135,7 +135,39 @@ const PRODUCT_OPTION_BASE_PRICES: Record<string, Record<string, Record<string, n
   },
 };
 
+const SOCK_LENGTH_PRICE_KEYWORDS: Array<{ match: string; price: number }> = [
+  { match: "long socks", price: 75 },
+  { match: "40cm", price: 75 },
+  { match: "short socks", price: 72 },
+  { match: "25cm", price: 72 },
+];
+
 export const VINYL_PRICE_PER_SQUARE_CM = 3;
+
+function getOptionGroup(product: Product, groupLabel: string) {
+  return product.variantOptions?.find((group) => group.label === groupLabel);
+}
+
+function getInlineOptionPrice(group: ProductOptionGroup | undefined, value: string) {
+  if (!group?.prices) {
+    return undefined;
+  }
+
+  const configuredPrice = group.prices[value];
+  return typeof configuredPrice === "number" ? configuredPrice : undefined;
+}
+
+function getSocksOptionPrice(product: Product, value: string) {
+  const normalizedProduct = `${product.slug} ${product.name}`.toLowerCase();
+
+  if (!normalizedProduct.includes("sock")) {
+    return undefined;
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+  const match = SOCK_LENGTH_PRICE_KEYWORDS.find((entry) => normalizedValue.includes(entry.match));
+  return match?.price;
+}
 
 export function calculateVinylPrice(widthCm: number, heightCm: number) {
   const safeWidth = Math.max(widthCm, 5);
@@ -145,6 +177,18 @@ export function calculateVinylPrice(widthCm: number, heightCm: number) {
 }
 
 export function getOptionValuePrice(product: Product, groupLabel: string, value: string) {
+  const inlinePrice = getInlineOptionPrice(getOptionGroup(product, groupLabel), value);
+
+  if (typeof inlinePrice === "number") {
+    return inlinePrice;
+  }
+
+  const socksPrice = getSocksOptionPrice(product, value);
+
+  if (typeof socksPrice === "number") {
+    return socksPrice;
+  }
+
   return PRODUCT_OPTION_BASE_PRICES[product.slug]?.[groupLabel]?.[value];
 }
 
@@ -161,7 +205,15 @@ export function getConfiguredBasePrice(product: Product, selectedOptions: Record
 }
 
 export function getRequiredPricedOptionGroups(product: Product) {
-  return Object.keys(PRODUCT_OPTION_BASE_PRICES[product.slug] ?? {});
+  const staticGroups = Object.keys(PRODUCT_OPTION_BASE_PRICES[product.slug] ?? {});
+  const dynamicGroups =
+    product.variantOptions
+      ?.filter((group) =>
+        group.values.some((value) => typeof getOptionValuePrice(product, group.label, value) === "number"),
+      )
+      .map((group) => group.label) ?? [];
+
+  return Array.from(new Set([...staticGroups, ...dynamicGroups]));
 }
 
 export function calculateLineItemTotal(basePrice: number, printUpcharge = 0, customVinylPrice = 0) {

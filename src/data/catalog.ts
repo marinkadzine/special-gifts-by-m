@@ -923,11 +923,19 @@ function normalizeVariantOptions(value: unknown) {
         return null;
       }
 
-      const option = entry as { label?: unknown; values?: unknown };
+      const option = entry as { label?: unknown; values?: unknown; prices?: unknown };
       const label = typeof option.label === "string" ? option.label.trim() : "";
       const values = Array.isArray(option.values)
         ? option.values.map((item) => String(item).trim()).filter(Boolean)
         : [];
+      const prices =
+        option.prices && typeof option.prices === "object"
+          ? Object.fromEntries(
+              Object.entries(option.prices as Record<string, unknown>)
+                .map(([key, rawPrice]) => [key.trim(), Number(rawPrice)] as const)
+                .filter(([key, rawPrice]) => key && Number.isFinite(rawPrice)),
+            )
+          : undefined;
 
       if (!label || !values.length) {
         return null;
@@ -936,6 +944,7 @@ function normalizeVariantOptions(value: unknown) {
       return {
         label,
         values,
+        ...(prices && Object.keys(prices).length ? { prices } : {}),
       } satisfies ProductOptionGroup;
     })
     .filter((entry): entry is ProductOptionGroup => Boolean(entry));
