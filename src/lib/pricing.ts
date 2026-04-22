@@ -135,14 +135,16 @@ const PRODUCT_OPTION_BASE_PRICES: Record<string, Record<string, Record<string, n
   },
 };
 
-const SOCK_LENGTH_PRICE_KEYWORDS: Array<{ match: string; price: number }> = [
-  { match: "long socks", price: 75 },
-  { match: "40cm", price: 75 },
-  { match: "short socks", price: 72 },
-  { match: "25cm", price: 72 },
+const SOCK_LENGTH_PRICE_KEYWORDS: Array<{ matches: string[]; price: number }> = [
+  { matches: ["long socks", "long sock", "long", "40cm", "40 cm", "40"], price: 75 },
+  { matches: ["short socks", "short sock", "short", "25cm", "25 cm", "25"], price: 72 },
 ];
 
 export const VINYL_PRICE_PER_SQUARE_CM = 3;
+
+function normalizePriceLookupValue(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
 
 function getOptionGroup(product: Product, groupLabel: string) {
   return product.variantOptions?.find((group) => group.label === groupLabel);
@@ -154,19 +156,58 @@ function getInlineOptionPrice(group: ProductOptionGroup | undefined, value: stri
   }
 
   const configuredPrice = group.prices[value];
-  return typeof configuredPrice === "number" ? configuredPrice : undefined;
+  if (typeof configuredPrice === "number") {
+    return configuredPrice;
+  }
+
+  const normalizedValue = normalizePriceLookupValue(value);
+  const matchingEntry = Object.entries(group.prices).find(([configuredValue]) => {
+    return normalizePriceLookupValue(configuredValue) === normalizedValue;
+  });
+
+  return typeof matchingEntry?.[1] === "number" ? matchingEntry[1] : undefined;
 }
 
 function getSocksOptionPrice(product: Product, value: string) {
-  const normalizedProduct = `${product.slug} ${product.name}`.toLowerCase();
+  const normalizedProduct = normalizePriceLookupValue(`${product.slug} ${product.name}`);
 
   if (!normalizedProduct.includes("sock")) {
     return undefined;
   }
 
-  const normalizedValue = value.trim().toLowerCase();
-  const match = SOCK_LENGTH_PRICE_KEYWORDS.find((entry) => normalizedValue.includes(entry.match));
+  const normalizedValue = normalizePriceLookupValue(value);
+  const compactValue = normalizedValue.replace(/\s+/g, "");
+  const match = SOCK_LENGTH_PRICE_KEYWORDS.find((entry) =>
+    entry.matches.some((keyword) => {
+      const normalizedKeyword = normalizePriceLookupValue(keyword);
+      return normalizedValue.includes(normalizedKeyword) || compactValue.includes(normalizedKeyword.replace(/\s+/g, ""));
+    }),
+  );
   return match?.price;
+}
+
+export function getProductPriceRange(product: Product) {
+  const priceOptions = new Set<number>([product.basePrice]);
+
+  product.variantOptions?.forEach((group) => {
+    group.values.forEach((value) => {
+      const optionPrice = getOptionValuePrice(product, group.label, value);
+
+      if (typeof optionPrice === "number") {
+        priceOptions.add(optionPrice);
+      }
+    });
+  });
+
+  const prices = Array.from(priceOptions).sort((left, right) => left - right);
+  const min = prices[0] ?? product.basePrice;
+  const max = prices[prices.length - 1] ?? product.basePrice;
+
+  return {
+    min,
+    max,
+    hasRange: min !== max,
+  };
 }
 
 export function calculateVinylPrice(widthCm: number, heightCm: number) {

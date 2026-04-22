@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/store";
-import { formatCurrency } from "@/lib/pricing";
+import { formatCurrency, getProductPriceRange } from "@/lib/pricing";
 import { useWishlist } from "@/components/wishlist-provider";
 
 export function ProductCard({ product }: { product: Product }) {
   const { hasItem, toggleItem } = useWishlist();
   const inWishlist = hasItem(product.slug);
+  const priceRange = getProductPriceRange(product);
 
   return (
     <article className="glass card-hover rounded-[1.75rem] p-5">
@@ -48,7 +49,9 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
         </div>
         <span className="rounded-full bg-[var(--blush)] px-3 py-1 text-sm font-extrabold text-[var(--rose-deep)]">
-          {formatCurrency(product.basePrice)}
+          {priceRange.hasRange
+            ? `${formatCurrency(priceRange.min)} - ${formatCurrency(priceRange.max)}`
+            : formatCurrency(priceRange.min)}
         </span>
       </div>
 
