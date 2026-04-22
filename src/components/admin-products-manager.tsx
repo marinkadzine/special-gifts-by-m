@@ -29,6 +29,13 @@ type ProductFormState = {
   active: boolean;
 };
 
+type VariantOptionTemplate = {
+  id: string;
+  buttonLabel: string;
+  helper: string;
+  optionGroup: ProductOptionGroup;
+};
+
 const EMPTY_PRODUCT_FORM: ProductFormState = {
   slug: "",
   name: "",
@@ -57,6 +64,66 @@ function createEmptyVariantOptionGroup(): ProductOptionGroup {
   return {
     label: "",
     values: [""],
+  };
+}
+
+const VARIANT_OPTION_TEMPLATES: VariantOptionTemplate[] = [
+  {
+    id: "size",
+    buttonLabel: "Size",
+    helper: "Common clothing or product sizing",
+    optionGroup: {
+      label: "Size",
+      values: ["Small", "Medium", "Large"],
+    },
+  },
+  {
+    id: "colour",
+    buttonLabel: "Colour",
+    helper: "Popular colour choices",
+    optionGroup: {
+      label: "Colour",
+      values: ["Black", "White", "Pink"],
+    },
+  },
+  {
+    id: "type",
+    buttonLabel: "Type",
+    helper: "Useful for adults, kids, standard, premium, and shape choices",
+    optionGroup: {
+      label: "Type",
+      values: ["Standard", "Premium"],
+    },
+  },
+  {
+    id: "quantity",
+    buttonLabel: "Quantity",
+    helper: "Handy for print packs and marketing items",
+    optionGroup: {
+      label: "Quantity",
+      values: ["1", "10", "50", "100"],
+    },
+  },
+  {
+    id: "socks-length",
+    buttonLabel: "Socks Length",
+    helper: "Preloads both sock prices",
+    optionGroup: {
+      label: "Length",
+      values: ["Short Socks (25cm)", "Long Socks (40cm)"],
+      prices: {
+        "Short Socks (25cm)": 72,
+        "Long Socks (40cm)": 75,
+      },
+    },
+  },
+];
+
+function createVariantGroupFromTemplate(template: VariantOptionTemplate): ProductOptionGroup {
+  return {
+    label: template.optionGroup.label,
+    values: [...template.optionGroup.values],
+    ...(template.optionGroup.prices ? { prices: { ...template.optionGroup.prices } } : {}),
   };
 }
 
@@ -343,10 +410,36 @@ export function AdminProductsManager() {
 
   function addVariantGroup() {
     updateVariantGroups((current) => [...current, createEmptyVariantOptionGroup()]);
+    setStatus("Blank variant group added.");
+  }
+
+  function addVariantGroupFromTemplate(templateId: string) {
+    const template = VARIANT_OPTION_TEMPLATES.find((entry) => entry.id === templateId);
+
+    if (!template) {
+      return;
+    }
+
+    updateVariantGroups((current) => [...current, createVariantGroupFromTemplate(template)]);
+    setStatus(`${template.optionGroup.label} options added. Adjust the values or prices if needed.`);
   }
 
   function removeVariantGroup(groupIndex: number) {
     updateVariantGroups((current) => current.filter((_, index) => index !== groupIndex));
+  }
+
+  function duplicateVariantGroup(groupIndex: number) {
+    updateVariantGroups((current) => {
+      const group = current[groupIndex];
+
+      if (!group) {
+        return current;
+      }
+
+      const clonedGroup = cloneOptionGroups([group])[0];
+      return [...current.slice(0, groupIndex + 1), clonedGroup, ...current.slice(groupIndex + 1)];
+    });
+    setStatus("Variant group duplicated.");
   }
 
   function updateVariantGroupLabel(groupIndex: number, value: string) {
@@ -864,9 +957,11 @@ export function AdminProductsManager() {
                 </p>
               </div>
               {!isCustomVinylStickerSlug(formState.slug) ? (
-                <button type="button" className="button-secondary px-4 py-2 text-sm" onClick={addVariantGroup}>
-                  Add option group
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="button-secondary px-4 py-2 text-sm" onClick={addVariantGroup}>
+                    Add blank group
+                  </button>
+                </div>
               ) : null}
             </div>
 
@@ -874,7 +969,31 @@ export function AdminProductsManager() {
               <p className="mt-4 rounded-[1rem] bg-[var(--light-grey)] px-4 py-3 text-sm leading-7 text-[var(--berry)]">
                 Vinyl stickers now use the live size calculator, so no extra finish or option group is needed here.
               </p>
-            ) : formState.variantOptions.length ? (
+            ) : (
+              <>
+                <div className="mt-4 rounded-[1rem] border border-[var(--line)] bg-[var(--light-grey)]/80 p-4">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[var(--mauve)]">Quick add templates</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {VARIANT_OPTION_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        className="button-secondary px-4 py-2 text-sm"
+                        onClick={() => addVariantGroupFromTemplate(template.id)}
+                      >
+                        {template.buttonLabel}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    {VARIANT_OPTION_TEMPLATES.map((template) => (
+                      <p key={`${template.id}-helper`} className="text-xs leading-6 text-[var(--mauve)]">
+                        <span className="font-bold text-[var(--berry)]">{template.buttonLabel}:</span> {template.helper}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                {formState.variantOptions.length ? (
               <div className="mt-4 space-y-4">
                 {formState.variantOptions.map((group, groupIndex) => (
                   <div key={`variant-group-${groupIndex}`} className="rounded-[1.2rem] border border-[var(--line)] bg-white p-4">
@@ -885,13 +1004,31 @@ export function AdminProductsManager() {
                         placeholder="Option label, for example Size or Length"
                         className="flex-1 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
                       />
-                      <button
-                        type="button"
-                        className="button-secondary px-4 py-2 text-sm"
-                        onClick={() => removeVariantGroup(groupIndex)}
-                      >
-                        Remove group
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="button-secondary px-4 py-2 text-sm"
+                          onClick={() => duplicateVariantGroup(groupIndex)}
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          type="button"
+                          className="button-secondary px-4 py-2 text-sm"
+                          onClick={() => removeVariantGroup(groupIndex)}
+                        >
+                          Remove group
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-[var(--mauve)]">
+                      Add each choice and, if needed, enter the exact price for that choice. Blank prices will keep the
+                      normal base price.
+                    </p>
+                    <div className="mb-2 mt-4 hidden grid-cols-[1.2fr_0.8fr_auto] gap-3 px-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[var(--mauve)] md:grid">
+                      <span>Option value</span>
+                      <span>Price</span>
+                      <span>Action</span>
                     </div>
                     <div className="mt-4 space-y-3">
                       {group.values.map((value, valueIndex) => (
@@ -908,8 +1045,9 @@ export function AdminProductsManager() {
                             step="0.01"
                             value={value && group.prices?.[value] !== undefined ? String(group.prices[value]) : ""}
                             onChange={(event) => updateVariantPrice(groupIndex, value, event.target.value)}
-                            placeholder="Optional price"
-                            className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm"
+                            placeholder={value.trim() ? "Optional price" : "Add value first"}
+                            disabled={!value.trim()}
+                            className="rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm disabled:cursor-not-allowed disabled:bg-[var(--light-grey)]"
                           />
                           <button
                             type="button"
@@ -931,11 +1069,13 @@ export function AdminProductsManager() {
                   </div>
                 ))}
               </div>
-            ) : (
+                ) : (
               <p className="mt-4 rounded-[1rem] bg-[var(--light-grey)] px-4 py-3 text-sm leading-7 text-[var(--berry)]">
                 No variant groups added yet. Use the button above for choices like Size, Colour, Sleeve, Shape, or
                 Socks length.
               </p>
+                )}
+              </>
             )}
           </div>
 
