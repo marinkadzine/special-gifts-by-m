@@ -180,3 +180,16 @@ export type Review = {
   featured: boolean;
   created_at: string;
 };
+
+export type HomePageBanner = {
+  id: string;
+  title: string;
+  image_url: string;
+  caption: string | null;
+  cta_label: string | null;
+  cta_href: string | null;
+  active: boolean;
+  featured: boolean;
+  sort_order: number;
+  created_at: string;
+};

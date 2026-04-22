@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { defaultProducts } from "@/data/catalog";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { getStoreSectionLabel } from "@/lib/store-navigation";
 import { getBrowserSupabaseClient, uploadProductImages } from "@/lib/supabase";
@@ -304,6 +305,28 @@ function humanizeSaveError(message: string) {
   return message;
 }
 
+function createProductRecordPayload(product: Product, active: boolean): Omit<ProductRecord, "id" | "created_at"> {
+  return {
+    slug: product.slug,
+    name: product.name,
+    category: product.category,
+    store_section: product.storeSection,
+    base_price: product.basePrice,
+    description: product.description,
+    summary: product.summary,
+    lead_time: product.leadTime,
+    featured: Boolean(product.featured),
+    supports_gift_wrap: Boolean(product.supportsGiftWrap),
+    supports_custom_vinyl: Boolean(product.supportsCustomVinyl),
+    variant_options: product.variantOptions ?? null,
+    print_sizes: product.printSizes ?? null,
+    badges: product.badges ?? null,
+    image_url: product.image ?? null,
+    gallery_images: product.galleryImages ?? null,
+    active,
+  };
+}
+
 export function AdminProductsManager() {
   const { loading, products, refresh } = useStoreProducts();
   const pathname = usePathname();
@@ -317,6 +340,7 @@ export function AdminProductsManager() {
   const [uploadingGalleryImages, setUploadingGalleryImages] = useState(false);
   const [hiddenProducts, setHiddenProducts] = useState<ProductRecord[]>([]);
   const formSectionRef = useRef<HTMLElement | null>(null);
+  const builtInProductSlugs = useRef(new Set(defaultProducts.map((product) => product.slug)));
 
   const sortedProducts = [...products].sort((left, right) =>
     left.category === right.category
@@ -367,6 +391,22 @@ export function AdminProductsManager() {
       active = false;
     };
   }, []);
+
+  async function refreshHiddenProducts() {
+    const supabase = getBrowserSupabaseClient();
+
+    if (!supabase) {
+      return;
+    }
+
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("active", false)
+      .order("created_at", { ascending: true });
+
+    setHiddenProducts((data as ProductRecord[] | null) ?? []);
+  }
 
   useEffect(() => {
     const requestedSlug = searchParams.get("edit");
@@ -721,20 +761,45 @@ export function AdminProductsManager() {
     const supabase = getBrowserSupabaseClient();
 
     if (!supabase) {
-      setStatus("Supabase is not connected, so items cannot be removed.");
+      setStatus("Supabase is not connected, so items cannot be deleted.");
       return;
     }
 
-    if (!window.confirm(`Remove "${name}" from the store permanently? This cannot be undone.`)) {
+    const isBuiltInItem = builtInProductSlugs.current.has(slug);
+    const confirmationMessage = isBuiltInItem
+      ? `Delete "${name}" from the live store list? It will be hidden from customers but can still be restored later from the admin panel.`
+      : `Delete "${name}" from the store permanently? This cannot be undone.`;
+
+    if (!window.confirm(confirmationMessage)) {
       return;
     }
 
     try {
       setSaving(true);
-      const { error } = await supabase.from("products").delete().eq("slug", slug);
+      let error: { message: string } | null = null;
+
+      if (isBuiltInItem) {
+        const currentProduct = products.find((product) => product.slug === slug);
+
+        if (!currentProduct) {
+          setStatus("This product could not be found in the current catalogue.");
+          return;
+        }
+
+        const result = await supabase
+          .from("products")
+          .upsert(createProductRecordPayload(currentProduct, false) as never, {
+            onConflict: "slug",
+          });
+
+        error = result.error;
+      } else {
+        const result = await supabase.from("products").delete().eq("slug", slug);
+        error = result.error;
+      }
 
       if (error) {
-        setStatus(`Could not remove item: ${error.message}`);
+        setStatus(`Could not delete item: ${error.message}`);
         return;
       }
 
@@ -745,8 +810,12 @@ export function AdminProductsManager() {
       }
 
       refresh();
-      setHiddenProducts((current) => current.filter((p) => p.slug !== slug));
-      setStatus(`"${name}" has been removed from the store.`);
+      await refreshHiddenProducts();
+      setStatus(
+        isBuiltInItem
+          ? `"${name}" has been hidden from the live store.`
+          : `"${name}" has been deleted from the store.`,
+      );
     } finally {
       setSaving(false);
     }
@@ -1161,7 +1230,7 @@ export function AdminProductsManager() {
                         className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
                         onClick={() => handleRemove(product.slug, product.name)}
                       >
-                        Remove
+                        Delete
                       </button>
                       </div>
                     </div>
@@ -1203,7 +1272,7 @@ export function AdminProductsManager() {
                             className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-100"
                             onClick={() => handleRemove(product.slug, product.name)}
                           >
-                            Remove
+                            Delete
                           </button>
                           </div>
                         </div>

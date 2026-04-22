@@ -8,6 +8,7 @@ import { GallerySection } from "@/components/gallery-section";
 import { Hero } from "@/components/hero";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SeasonalBanner } from "@/components/seasonal-banner";
 import { SpecialsSlider } from "@/components/specials-slider";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { DEVELOPER_CREDIT } from "@/lib/business-details";
@@ -27,6 +28,7 @@ export function StorefrontHome() {
       <SiteHeader />
       <div className="space-y-16 pb-16 pt-8">
         <Hero />
+        <SeasonalBanner />
         <SpecialsSlider />
 
         <section className="shell">

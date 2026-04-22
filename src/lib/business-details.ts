@@ -1,7 +1,7 @@
 export const BUSINESS_CONTACT = {
   businessName: "Special Gifts by M",
-  phoneDisplay: "+27 82 464 3498",
-  phoneLink: "27824643498",
+  phoneDisplay: "+27 82 464 3408",
+  phoneLink: "27824643408",
   email: "specialgiftsbym@gmail.com",
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { AdminHomeBannersManager } from "@/components/admin-home-banners-manager";
 import { AdminProductsManager } from "@/components/admin-products-manager";
 import { useAuth } from "@/components/auth-provider";
 import { fetchGalleryItems, getGalleryImages } from "@/lib/gallery-items";
@@ -545,6 +546,7 @@ export function AdminDashboard() {
       </div>
 
       <AdminProductsManager />
+      <AdminHomeBannersManager userId={user.id} onStatusChange={setStatus} />
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <section id="gallery-editor" ref={galleryFormSectionRef} className="glass rounded-[2rem] p-6">

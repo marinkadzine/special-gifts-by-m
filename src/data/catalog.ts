@@ -59,6 +59,7 @@ const categoryOrder = [
   "Premium",
   "Marketing Essentials",
   "Packaging",
+  "Specials",
   "Seasonal",
   "Stickers",
 ];
@@ -371,6 +372,23 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     variantOptions: [{ label: "Size", values: ["A6", "A5", "A4 Portrait", "A4 Landscape"] }],
   },
   {
+    id: "mothers-day-personalized-bundle",
+    slug: "mothers-day-personalized-bundle",
+    name: "Mother's Day Personalized Bundle",
+    category: "Specials",
+    basePrice: 250,
+    featured: true,
+    description:
+      "A ready-to-love Mother's Day bundle that still feels personal. This set includes a regular printed mug, 10x10cm stone photo slab, Aero chocolate, and a gift bag.",
+    summary:
+      "All for R250. Includes a regular mug, 10x10cm stone photo slab, Aero chocolate, and a gift bag.",
+    leadTime: "2-4 business days",
+    image: "/branding/mothers-day-banner.png",
+    galleryImages: ["/branding/mothers-day-banner.png"],
+    supportsGiftWrap: true,
+    badges: ["Bundle Special", "All for R250"],
+  },
+  {
     id: "lanyard",
     slug: "custom-lanyard",
     name: "Custom Lanyard",
@@ -388,8 +406,9 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     name: "Socks",
     category: "Accessories",
     basePrice: 72,
-    description: "Custom-printed socks in short (25cm) ankle length, perfect for gifting, teams, and personalized keepsakes.",
-    summary: "Short printed socks (25cm) for easy gifting and everyday branded wear.",
+    description:
+      "Custom-printed socks available in short (25cm) and long (40cm) lengths, perfect for gifting, teams, and personalized keepsakes.",
+    summary: "Short socks (25cm) from R72, with long socks (40cm) available as a R75 variant.",
     leadTime: "3-5 business days",
     image: "/store-products/accessories_socks_short_25cm.png",
     galleryImages: [
@@ -400,7 +419,11 @@ const baseProducts: Omit<Product, "storeSection">[] = [
     variantOptions: [
       {
         label: "Length",
-        values: ["Short Socks (25cm)"],
+        values: ["Short Socks (25cm)", "Long Socks (40cm)"],
+        prices: {
+          "Short Socks (25cm)": 72,
+          "Long Socks (40cm)": 75,
+        },
       },
     ],
   },
@@ -985,6 +1008,18 @@ function getFallbackStoreSection(slug: string) {
   return readyMadeProductSlugs.has(slug) ? "ready-made" : "personalized";
 }
 
+function normalizeProductKey(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isStandaloneLongSocksProduct(record: Pick<ProductRecord, "slug" | "name">) {
+  const slug = normalizeProductKey(record.slug);
+  const name = normalizeProductKey(record.name);
+  const combined = `${slug} ${name}`;
+
+  return combined.includes("sock") && combined.includes("long") && record.slug !== "custom-socks";
+}
+
 function createProductFromRecord(record: ProductRecord): Product {
   const galleryImages = normalizeStringArray(record.gallery_images);
   const image = typeof record.image_url === "string" && record.image_url.trim() ? record.image_url.trim() : undefined;
@@ -1072,6 +1107,10 @@ export function mergeStoreProducts(records: ProductRecord[] = []) {
 
   for (const record of recordsBySlug.values()) {
     if (record.active === false) {
+      continue;
+    }
+
+    if (isStandaloneLongSocksProduct(record)) {
       continue;
     }
 
