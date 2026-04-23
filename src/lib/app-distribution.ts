@@ -4,15 +4,16 @@ export const GITHUB_RELEASES_URL = "https://github.com/marinkadzine/special-gift
 export const ANDROID_APK_FILENAME = "special-gifts-by-m.apk";
 export const ANDROID_APK_DOWNLOAD_URL = `${GITHUB_RELEASES_URL}/download/${ANDROID_APK_FILENAME}`;
 
-export const ANDROID_APP_VERSION = "1.0.0";
-export const ANDROID_VERSION_CODE = 1;
-export const ANDROID_RELEASE_DATE = "2026-04-17";
+export const ANDROID_APP_VERSION = "1.0.2";
+export const ANDROID_VERSION_CODE = 3;
+export const ANDROID_RELEASE_DATE = "2026-04-23";
 
 export const ANDROID_RELEASE_NOTES = [
   "Live shopping flow with personalized and designed products.",
   "Customer accounts with profile updates, gallery access, and reviews.",
   "Gift wrapping, PUDO or Pick Up delivery planning, and checkout terms.",
   "Admin tools for orders, callback requests, gallery updates, and store edits.",
+  "Updated Android app icon and a softer mobile-friendly layout polish.",
 ];
 
 export const ANDROID_INSTALL_STEPS = [

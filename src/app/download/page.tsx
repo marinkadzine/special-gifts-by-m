@@ -53,8 +53,9 @@ export default function DownloadPage() {
                   Released on {ANDROID_RELEASE_DATE}
                 </p>
                 <p className="mt-4 text-sm leading-7 text-[var(--berry)]">
-                  Use the same APK link every time. Each new GitHub Release replaces the latest app
-                  download for customers.
+                  This page currently serves Special Gifts by M Android version {ANDROID_APP_VERSION},
+                  while keeping the trusted download and release links the same until you choose to
+                  change them.
                 </p>
               </div>
             </div>
